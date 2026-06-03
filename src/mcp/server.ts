@@ -144,6 +144,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       });
     }
     return {
+      protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
       serverInfo: { name: "xizhao", version: "0.0.1" },
     };
