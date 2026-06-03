@@ -107,26 +107,28 @@ xizhao audit [--since 24h]  查看审计日志
 
 ## MCP 工具
 
-AI 客户端可调用 5 个工具：
+AI 客户端可调用 6 个工具。**`list_connections` 必须最先调用**以发现可用连接：
 
-| 工具                | 说明                       |
-| ------------------- | -------------------------- |
-| `execute_sql`       | 执行 SQL（经策略引擎验证） |
-| `explain_sql`       | 获取 MySQL 执行计划        |
-| `list_tables`       | 列出数据库表               |
-| `describe_table`    | 查看表 DDL                 |
-| `check_task_status` | 查询审批任务状态           |
+| 工具                | 说明                                            |
+| ------------------- | ----------------------------------------------- |
+| `list_connections`  | **第一个调用** — 列出所有可用连接名、主机、策略 |
+| `execute_sql`       | 执行 SQL（经策略引擎验证，DDL 需审批）          |
+| `explain_sql`       | 获取 MySQL 执行计划                             |
+| `list_tables`       | 列出数据库表                                    |
+| `describe_table`    | 查看表 DDL                                      |
+| `check_task_status` | 查询审批任务状态（NEED_APPROVAL 后轮询）        |
 
 ## 自审批工作流
 
 当 AI 执行 DDL（如 `CREATE TABLE`）时：
 
 ```
-1. AI 调用 execute_sql → 策略引擎判定"需要审批"
-2. xizhao 返回 NEED_APPROVAL + taskId + approvalUrl
-3. 开发者在 Dashboard 点击"批准"（可选修改 SQL）
-4. AI 调用 check_task_status 发现已批准
-5. AI 重新调用 execute_sql → 自动 consume → 执行成功
+1. AI 调用 list_connections → 发现可用连接名
+2. AI 调用 execute_sql(connection, sql) → 策略引擎判定"需要审批"
+3. xizhao 返回 NEED_APPROVAL + taskId + approvalUrl
+4. 开发者在 Dashboard 点击"批准"（可选修改 SQL）
+5. AI 调用 check_task_status 发现已批准
+6. AI 重新调用 execute_sql → 自动 consume → 执行成功
 ```
 
 ## 策略引擎
@@ -185,11 +187,11 @@ src/
 │   ├── policy     AST 策略引擎 (7 rules)
 │   └── storage    SQLite 存储层
 ├── mcp/           MCP Server
-│   ├── server     McpServer + 5 tool 注册
+│   ├── server     McpServer + 6 tool 注册
 │   ├── context    AsyncLocalStorage 请求上下文
 │   ├── response   统一响应格式
 │   ├── middleware  withAudit 中间件
-│   └── tools      5 个工具处理器
+│   └── tools      6 个工具处理器（含 list_connections）
 ├── shared/        共享工具 (errors, ids, time, redact)
 └── web/           Dashboard
     ├── server     Hono 服务组装

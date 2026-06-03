@@ -1,7 +1,7 @@
 # Stage 07：MCP 服务与工具
 
 > **输入：** Stage 04 策略引擎 + Stage 05 审计 + Stage 06 MySQL
-> **输出：** 完整的 Stdio MCP Server（5 个工具）+ AsyncLocalStorage + withAudit 中间件
+> **输出：** 完整的 Stdio MCP Server（6 个工具，含 list_connections）+ AsyncLocalStorage + withAudit 中间件
 > **依赖：** Stage 04、05、06
 > **关联 ADR：** [0010](../adr/0010-mcp-implementation.md)、[0003](../adr/0003-authoritative-source-principle.md)
 
@@ -29,17 +29,18 @@
 ### 7.1 AsyncLocalStorage 上下文
 
 - [ ] `src/mcp/context.ts`：
+
   ```ts
-  import { AsyncLocalStorage } from 'node:async_hooks';
-  
+  import { AsyncLocalStorage } from "node:async_hooks";
+
   export interface RequestContext {
     clientInfo?: { name: string; version: string };
     auditId?: string;
     connectionName?: string;
   }
-  
+
   export const requestContext = new RequestContextStorage();
-  
+
   class RequestContextStorage extends AsyncLocalStorage<RequestContext> {
     getClientInfo(): { name: string; version: string } | undefined {
       return this.getStore()?.clientInfo;
@@ -49,39 +50,44 @@
     }
   }
   ```
+
 - [ ] 在 stage 05 的 logger 中使用 `requestContext.getClientInfo()` 注入到 pino
 
 ### 7.2 MCP Server 启动
 
 - [ ] `src/mcp/server.ts`：
+
   ```ts
-  import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-  import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-  import { requestContext } from './context.js';
-  
+  import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+  import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+  import { requestContext } from "./context.js";
+
   export function createMcpServer() {
     const server = new Server(
-      { name: 'xizhao', version: VERSION },
-      { capabilities: { tools: {} } }
+      { name: "xizhao", version: VERSION },
+      { capabilities: { tools: {} } },
     );
-  
+
     // 注册工具
-  
+
     server.oninitialize = (req) => {
       const clientInfo = req.params.clientInfo;
       // 进入 request scope,后续 handler 可通过 AsyncLocalStorage 取
-      return requestContext.run({ clientInfo }, () => ({ capabilities: { tools: {} } }));
+      return requestContext.run({ clientInfo }, () => ({
+        capabilities: { tools: {} },
+      }));
     };
-  
+
     return server;
   }
-  
+
   export async function runMcpServer() {
     const server = createMcpServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
   }
   ```
+
 - [ ] **关键约束**：
   - stdout 严格纯净（MCP 协议占用）
   - 所有 console.log/error 必须走 pino（自动输出到 stderr）
@@ -90,27 +96,30 @@
 ### 7.3 Tool 注册
 
 - [ ] 每个工具用 Zod 定义 input schema：
+
   ```ts
   // src/mcp/tools/execute-sql.ts
-  import { z } from 'zod';
-  import { zodToJsonSchema } from 'zod-to-json-schema';
-  
+  import { z } from "zod";
+  import { zodToJsonSchema } from "zod-to-json-schema";
+
   const ExecuteSqlSchema = z.object({
-    connection: z.string().describe('Connection alias'),
-    sql: z.string().min(1).describe('Single SQL statement'),
+    connection: z.string().describe("Connection alias"),
+    sql: z.string().min(1).describe("Single SQL statement"),
   });
-  
+
   export const executeSqlTool = {
-    name: 'execute_sql',
-    description: 'Execute a single SQL statement...',
+    name: "execute_sql",
+    description: "Execute a single SQL statement...",
     inputSchema: zodToJsonSchema(ExecuteSqlSchema),
-    handler: withAudit('execute_sql', async (args, ctx) => {
+    handler: withAudit("execute_sql", async (args, ctx) => {
       const parsed = ExecuteSqlSchema.parse(args);
       // ...策略评估 + mysql 执行
     }),
   };
   ```
-- [ ] 5 个工具：
+
+- [ ] 6 个工具：
+  - `list_connections`：{} → { connections[] } — **必须第一个调用，发现可用连接**
   - `execute_sql`：{ connection, sql } → 结果（参考 stage 06 SqlResult）
   - `explain_sql`：{ connection, sql } → { plan }
   - `list_tables`：{ connection, schema? } → { tables[] }
@@ -123,27 +132,31 @@
   ```ts
   export function withAudit<TIn, TOut>(
     toolName: string,
-    handler: (args: TIn, ctx: ToolContext) => Promise<TOut>
+    handler: (args: TIn, ctx: ToolContext) => Promise<TOut>,
   ) {
     return async (args: TIn, ctx: ToolContext) => {
       const auditId = ulid();
       const entry = createAuditEntry({ tool: toolName, args, ctx, auditId });
       try {
         const result = await requestContext.run(
-          { ...requestContext.getStore(), auditId, connectionName: ctx.connection?.name },
-          () => handler(args, ctx)
+          {
+            ...requestContext.getStore(),
+            auditId,
+            connectionName: ctx.connection?.name,
+          },
+          () => handler(args, ctx),
         );
-        entry.complete({ status: 'success', result });
+        entry.complete({ status: "success", result });
         return result;
       } catch (e) {
-        entry.complete({ status: 'error', error: e });
+        entry.complete({ status: "error", error: e });
         throw e;
       } finally {
         try {
-          await entry.flush();      // fail-on-audit-failure
+          await entry.flush(); // fail-on-audit-failure
         } catch (auditErr) {
           // 审计写失败:抛 INTERNAL_ERROR,不返回业务结果
-          throw new XizhaoError('AUDIT_WRITE_FAILED');
+          throw new XizhaoError("AUDIT_WRITE_FAILED");
         }
       }
     };
@@ -153,25 +166,40 @@
 ### 7.5 响应格式
 
 - [ ] `src/mcp/response.ts`：
+
   ```ts
   // 成功
   export function success(data: unknown, auditId: string) {
     return {
-      content: [{ type: 'text', text: JSON.stringify({ data, auditId }, null, 2) }],
+      content: [
+        { type: "text", text: JSON.stringify({ data, auditId }, null, 2) },
+      ],
     };
   }
-  
+
   // 失败
-  export function error(code: ErrorCode, message: string, auditId: string, detail?: unknown) {
+  export function error(
+    code: ErrorCode,
+    message: string,
+    auditId: string,
+    detail?: unknown,
+  ) {
     return {
       isError: true,
-      content: [{
-        type: 'text',
-        text: JSON.stringify({ error: { code, message, detail }, auditId }, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { error: { code, message, detail }, auditId },
+            null,
+            2,
+          ),
+        },
+      ],
     };
   }
   ```
+
 - [ ] 错误码统一：`NEED_APPROVAL` / `POLICY_VIOLATION` / `MYSQL_ERROR` / `TIMEOUT` / `MULTI_STATEMENT_NOT_SUPPORTED` / `SQL_PARSE_ERROR` / `CONNECTION_NOT_FOUND` / `INTERNAL_ERROR` / `SQL_SYNTAX_ERROR` / `SERVER_SHUTTING_DOWN`
 - [ ] 不使用 `_meta` 承载关键数据（自包含 content text）
 
@@ -191,33 +219,34 @@
 ### 7.7 优雅关闭
 
 - [ ] `src/cli/commands/client.ts` 实现：
+
   ```ts
   let shuttingDown = false;
   const inflight = new Set<Promise<unknown>>();
-  
+
   async function shutdown(signal: string) {
     if (shuttingDown) return;
     shuttingDown = true;
-    logger.warn({ signal }, 'Shutting down...');
-    
+    logger.warn({ signal }, "Shutting down...");
+
     // 1. 拒绝新请求(由 handler 检查 shuttingDown 标志)
     // 2. 等待 in-flight 最长 5 秒
     await Promise.race([
       Promise.allSettled([...inflight]),
-      new Promise(r => setTimeout(r, 5000)),
+      new Promise((r) => setTimeout(r, 5000)),
     ]);
-    
+
     // 3. 关闭 MySQL pool
     await closeAllPools();
-    
+
     // 4. 关闭 SQLite
     closeStorage();
-    
+
     process.exit(0);
   }
-  
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
   ```
 
 ### 7.8 测试
@@ -245,6 +274,7 @@ kill -INT $!
 ```
 
 预期：
+
 - 所有测试通过
 - 手动启动时 stdout 没有任何非 JSON-RPC 输出
 - SIGINT 后进程在 5 秒内退出
@@ -279,9 +309,9 @@ kill -INT $!
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| MCP SDK API 变更 | 锁定版本，关注 release notes |
-| AsyncLocalStorage 在某些异步路径丢失 | 集成测试覆盖关键路径 |
-| stdout 污染（如依赖库 console.log） | 覆写 `console.log = () => {}` 在 client 启动时 |
-| 优雅关闭时 in-flight 请求超时 | 5 秒兜底 + 审计记录"shutdown interrupted" |
+| 风险                                 | 应对                                           |
+| ------------------------------------ | ---------------------------------------------- |
+| MCP SDK API 变更                     | 锁定版本，关注 release notes                   |
+| AsyncLocalStorage 在某些异步路径丢失 | 集成测试覆盖关键路径                           |
+| stdout 污染（如依赖库 console.log）  | 覆写 `console.log = () => {}` 在 client 启动时 |
+| 优雅关闭时 in-flight 请求超时        | 5 秒兜底 + 审计记录"shutdown interrupted"      |

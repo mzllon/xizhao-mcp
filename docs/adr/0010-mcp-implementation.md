@@ -14,12 +14,12 @@ v1 第一发布是 Client 模式（[ADR-0007](./0007-onboarding-and-client-first
 不自实现协议层。SDK 由 Anthropic 维护，覆盖 Server / Client / Stdio / HTTP 全套。
 
 ```ts
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new Server(
-  { name: 'xizhao', version: '0.1.0' },
-  { capabilities: { tools: {} } }
+  { name: "xizhao", version: "0.1.0" },
+  { capabilities: { tools: {} } },
 );
 ```
 
@@ -54,30 +54,45 @@ const parsed = ExecuteSqlSchema.parse(args);
 // mcp/middleware/audit.ts
 export function withAudit<TIn, TOut>(
   toolName: string,
-  handler: (args: TIn, ctx: ToolContext) => Promise<TOut>
+  handler: (args: TIn, ctx: ToolContext) => Promise<TOut>,
 ) {
   return async (args: TIn, ctx: ToolContext) => {
     const entry = createAuditEntry({ tool: toolName, args, ctx });
     try {
       const result = await handler(args, ctx);
-      entry.complete({ status: 'success', result });
+      entry.complete({ status: "success", result });
       return result;
     } catch (e) {
-      entry.complete({ status: 'error', error: e });
+      entry.complete({ status: "error", error: e });
       throw e;
     } finally {
-      await entry.flush();   // fail-on-audit-failure (ADR-0004)
+      await entry.flush(); // fail-on-audit-failure (ADR-0004)
     }
   };
 }
 
 // 注册
 const tools = {
-  execute_sql: { handler: withAudit('execute_sql', executeSqlHandler), inputSchema },
-  explain_sql: { handler: withAudit('explain_sql', explainSqlHandler), inputSchema },
-  list_tables: { handler: withAudit('list_tables', listTablesHandler), inputSchema },
-  describe_table: { handler: withAudit('describe_table', describeTableHandler), inputSchema },
-  check_task_status: { handler: withAudit('check_task_status', checkTaskHandler), inputSchema },
+  execute_sql: {
+    handler: withAudit("execute_sql", executeSqlHandler),
+    inputSchema,
+  },
+  explain_sql: {
+    handler: withAudit("explain_sql", explainSqlHandler),
+    inputSchema,
+  },
+  list_tables: {
+    handler: withAudit("list_tables", listTablesHandler),
+    inputSchema,
+  },
+  describe_table: {
+    handler: withAudit("describe_table", describeTableHandler),
+    inputSchema,
+  },
+  check_task_status: {
+    handler: withAudit("check_task_status", checkTaskHandler),
+    inputSchema,
+  },
 };
 ```
 
@@ -100,8 +115,8 @@ MCP 协议有两层错误：
       type: 'text',
       text: JSON.stringify({
         error: {
-          code: 'NEED_APPROVAL' | 'POLICY_VIOLATION' | 'MYSQL_ERROR' | 
-                'TIMEOUT' | 'MULTI_STATEMENT_NOT_SUPPORTED' | 
+          code: 'NEED_APPROVAL' | 'POLICY_VIOLATION' | 'MYSQL_ERROR' |
+                'TIMEOUT' | 'MULTI_STATEMENT_NOT_SUPPORTED' |
                 'SQL_PARSE_ERROR' | 'CONNECTION_NOT_FOUND' | 'INTERNAL_ERROR',
           message: '<AI-readable human message>',
           detail?: <optional structured info, e.g. { taskId, approvalUrl } for NEED_APPROVAL>,
@@ -145,7 +160,7 @@ MCP 协议有两层错误：
 MCP `initialize` 请求带 `clientInfo: { name, version }`。用 Node `AsyncLocalStorage` 在 request scope 内传递，每个 handler 通过 `requestContext.getStore()?.clientInfo` 取。
 
 ```ts
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { AsyncLocalStorage } from "node:async_hooks";
 
 interface RequestContext {
   clientInfo?: { name: string; version: string };
@@ -160,15 +175,16 @@ export const requestContext = new AsyncLocalStorage<RequestContext>();
 
 ### v1 工具清单（最终）
 
-| 工具 | 输入 | 输出 |
-|------|------|------|
-| `execute_sql` | `{ connection, sql }` | `{ kind, columns?, rows?, rowCount?, affectedRows?, truncated, auditId }` |
-| `explain_sql` | `{ connection, sql }` | `{ plan, warning?, auditId }` |
-| `list_tables` | `{ connection, schema? }` | `{ tables: [{name, type, rowCount?}], auditId }` |
-| `describe_table` | `{ connection, table }` | `{ ddl, rowCount?, auditId }` |
-| `check_task_status` | `{ taskId }` | `{ status, expiresAt?, decidedAt?, modifiedSql?, decisionNote?, auditId }` |
+| 工具                | 输入                      | 输出                                                                       |
+| ------------------- | ------------------------- | -------------------------------------------------------------------------- |
+| `execute_sql`       | `{ connection, sql }`     | `{ kind, columns?, rows?, rowCount?, affectedRows?, truncated, auditId }`  |
+| `explain_sql`       | `{ connection, sql }`     | `{ plan, warning?, auditId }`                                              |
+| `list_tables`       | `{ connection, schema? }` | `{ tables: [{name, type, rowCount?}], auditId }`                           |
+| `describe_table`    | `{ connection, table }`   | `{ ddl, rowCount?, auditId }`                                              |
+| `check_task_status` | `{ taskId }`              | `{ status, expiresAt?, decidedAt?, modifiedSql?, decisionNote?, auditId }` |
 
 砍掉 PRD 原列表中的：
+
 - `list_connections` (T-05) —— Client 模式单用户场景下，用户已知自己配置的连接，AI 不需要列。
 - `list_my_tasks` (T-07) —— 与 `check_task_status` 重叠，AI 知道 taskId 直接查即可。
 
@@ -182,7 +198,7 @@ export const requestContext = new AsyncLocalStorage<RequestContext>();
 
 **正面**：
 
-- v1 代码骨架清晰：5 个 tool handler + 1 个 wrapper + 1 套 schema + 1 个 AsyncLocalStorage。
+- v1 代码骨架清晰：6 个 tool handler（含 list_connections）+ 1 个 wrapper + 1 套 schema + 1 个 AsyncLocalStorage。
 - 审计与业务解耦，新 tool 自动获得审计。
 - 错误格式结构化，AI 跨客户端行为可预测。
 - TypeScript 严格类型贯穿 schema → handler → response。
