@@ -109,6 +109,34 @@ export async function closeAllPools(): Promise<void> {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
+/**
+ * Statements that are hard-blocked at the execution layer.
+ *
+ * This is a defense-in-depth measure: even if the policy engine (Stage 04)
+ * is bypassed or misconfigured, these statements can NEVER reach MySQL.
+ * Rationale: CREATE/DROP/ALTER DATABASE affect the entire server instance,
+ * not just a single connection's scope — too dangerous for any automated tool.
+ *
+ * See ADR-0013 (hard-blocked statements at execution layer).
+ */
+const BLOCKED_SQL_PATTERNS: RegExp[] = [
+  /^\s*CREATE\s+(DATABASE|SCHEMA)\b/i,
+  /^\s*DROP\s+(DATABASE|SCHEMA)\b/i,
+  /^\s*ALTER\s+DATABASE\b/i,
+];
+
+/** Hard-block dangerous SQL statements at the execution layer. */
+function assertSqlSafe(sql: string): void {
+  for (const pattern of BLOCKED_SQL_PATTERNS) {
+    if (pattern.test(sql)) {
+      throw new XizhaoError(
+        "POLICY_VIOLATION",
+        "CREATE/DROP/ALTER DATABASE is permanently blocked at the execution layer. This operation cannot be performed.",
+      );
+    }
+  }
+}
+
 /** Classify a MySQL error into a XizhaoError */
 function classifyMySqlError(err: unknown): never {
   if (err instanceof XizhaoError) throw err;
@@ -166,6 +194,9 @@ export async function executeSql(
 ): Promise<SqlResult> {
   const pool = getPool(conn);
   const start = Date.now();
+
+  // Hard-block dangerous statements before they reach MySQL
+  assertSqlSafe(sql);
 
   try {
     const selectLike = isSelectLike(sql);
@@ -244,6 +275,9 @@ export async function explainSql(
   sql: string,
 ): Promise<ExplainResult> {
   const pool = getPool(conn);
+
+  // Hard-block even for EXPLAIN — no reason to explain a CREATE DATABASE
+  assertSqlSafe(sql);
 
   try {
     const explainSql = `EXPLAIN FORMAT=JSON ${sql}`;
