@@ -1,14 +1,24 @@
 #!/usr/bin/env node
-/**
- * Xizhao CLI entry point.
- *
- * v1 commands: setup, client, dashboard, conn, policy, audit
- */
-import { program } from "commander";
+import { Command } from "commander";
+import { auditCommand } from "./commands/audit.js";
+import { clientCommand } from "./commands/client.js";
+import { connCommand } from "./commands/conn.js";
+import { dashboardCommand } from "./commands/dashboard.js";
+import { policyCommand } from "./commands/policy.js";
+import { setupCommand } from "./commands/setup.js";
 
+const program = new Command();
 program
   .name("xizhao")
-  .description("Secure MCP proxy for AI agents accessing MySQL")
-  .version("0.0.1");
+  .description("犀照 - AI ↔ MySQL 安全代理")
+  .version("0.0.1")
+  .option("--verbose", "启用 debug 日志");
 
-program.parse();
+program.addCommand(setupCommand);
+program.addCommand(clientCommand);
+program.addCommand(dashboardCommand);
+program.addCommand(connCommand);
+program.addCommand(policyCommand);
+program.addCommand(auditCommand);
+
+program.parseAsync(process.argv);
