@@ -5,13 +5,15 @@ import type {
   PolicyRule,
   StatementType,
 } from "./types.js";
-import { Parser } from "node-sql-parser";
+import nodeSqlParser from "node-sql-parser";
 import { approvedTaskOverride } from "./rules/approved-task-override.js";
 import { blockStatementTypes } from "./rules/block-statement-types.js";
 import { enforceLimit } from "./rules/enforce-limit.js";
 import { enforceStatementTypes } from "./rules/enforce-statement-types.js";
 import { checkMultiStatement } from "./rules/multi-statement.js";
 import { needApprovalStatementTypes } from "./rules/need-approval-statement-types.js";
+
+const { Parser } = nodeSqlParser;
 
 const parser = new Parser();
 
