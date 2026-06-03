@@ -6,6 +6,14 @@
   "description": "Secure MCP proxy for AI agents accessing MySQL, with AST policy engine, tamper-evident audit log, and self-approval workflow.",
   "author": "miles",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mzllon/xizhao-mcp.git"
+  },
+  "homepage": "https://github.com/mzllon/xizhao-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/mzllon/xizhao-mcp/issues"
+  },
   "keywords": [
     "mcp",
     "mysql",
@@ -29,8 +37,14 @@
     "test:integration": "vitest run tests/integration",
     "test:coverage": "vitest run --coverage",
     "test:property": "vitest run tests/unit/policy.property.test.ts",
+    "prepublishOnly": "pnpm build",
     "prepare": "husky"
   },
+  "files": [
+    "dist/cli",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@hono/node-server": "^2.0.4",
     "@inquirer/prompts": "^8.5.2",

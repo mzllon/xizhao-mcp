@@ -1,0 +1,15 @@
+src/
+tests/
+docs/
+.claude/
+*.test.ts
+*.test.js
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+eslint.config.*
+.husky/
+.prettierrc*
+coverage/
+node_modules/
+.gitignore
