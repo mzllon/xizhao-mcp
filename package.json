@@ -1,0 +1,76 @@
+{
+  "name": "xizhao-mcp",
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "pnpm@10.32.1",
+  "description": "Secure MCP proxy for AI agents accessing MySQL, with AST policy engine, tamper-evident audit log, and self-approval workflow.",
+  "author": "miles",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "mysql",
+    "ai",
+    "security",
+    "audit"
+  ],
+  "bin": {
+    "xizhao": "./dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit tests/mcp",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:coverage": "vitest run --coverage",
+    "test:property": "vitest run tests/unit/policy.property.test.ts",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.10.0",
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0",
+    "drizzle-orm": "^0.45.2",
+    "env-paths": "^4.0.0",
+    "hono": "^4.12.23",
+    "mysql2": "^3.22.4",
+    "node-sql-parser": "^5.4.0",
+    "ora": "^9.4.0",
+    "pino": "^10.3.1",
+    "pino-roll": "^4.0.0",
+    "ulid": "^3.0.2",
+    "zod": "^4.4.3",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.0.0",
+    "@fast-check/vitest": "^0.4.1",
+    "@testcontainers/mysql": "^12.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "^4.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "prettier": "^3.8.3",
+    "testcontainers": "^12.0.1",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml}": [
+      "prettier --write"
+    ]
+  }
+}
