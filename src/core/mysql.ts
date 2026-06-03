@@ -234,14 +234,8 @@ function formatResult(
 ): SqlResult {
   const durationMs = Date.now() - startTime;
 
-  // ResultSetHeader = DML/DDL result
-  if (Array.isArray(result) && result.length === 0) {
-    // Empty array from DDL (e.g. CREATE TABLE)
-    return { kind: "ddl", durationMs };
-  }
-
+  // SELECT: mysql2 returns an array of RowDataPacket
   if (Array.isArray(result)) {
-    // SELECT result: array of RowDataPacket
     const rows = result as Record<string, unknown>[];
     const columns = extractColumns(fields);
     const truncated = rows.length >= maxLimit;
@@ -254,13 +248,16 @@ function formatResult(
     };
   }
 
-  // ResultSetHeader (DML: INSERT, UPDATE, DELETE)
+  // ResultSetHeader: both DML and DDL return this object
   const header = result as { affectedRows?: number; changedRows?: number };
-  if (typeof header.affectedRows === "number") {
+
+  // DML (INSERT/UPDATE/DELETE): affectedRows > 0
+  // DDL (CREATE TABLE/DROP TABLE): affectedRows === 0
+  if (typeof header.affectedRows === "number" && header.affectedRows > 0) {
     return { kind: "modify", affectedRows: header.affectedRows };
   }
 
-  // Fallback: treat as DDL
+  // DDL or other non-row operations
   return { kind: "ddl", durationMs };
 }
 
