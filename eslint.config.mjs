@@ -10,4 +10,10 @@ export default antfu(
     },
     ignores: ['dist/', 'node_modules/', '.claude/', '.agents/', '.codex/', 'docs/'],
   },
+  {
+    rules: {
+      'node/prefer-global/process': 'off',
+      'node/prefer-global/buffer': 'off',
+    },
+  },
 )
