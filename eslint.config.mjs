@@ -14,6 +14,8 @@ export default antfu(
     rules: {
       'node/prefer-global/process': 'off',
       'node/prefer-global/buffer': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'ts/no-explicit-any': 'off',
     },
   },
 )
