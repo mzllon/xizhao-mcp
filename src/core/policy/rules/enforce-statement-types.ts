@@ -21,8 +21,9 @@ export const enforceStatementTypes: PolicyRule = {
       allowedStatementTypes.includes(
         "<all>" as (typeof allowedStatementTypes)[0],
       )
-    )
+    ) {
       return null;
+    }
 
     const type = getStatementType(ast);
     if (!allowedStatementTypes.includes(type)) {
