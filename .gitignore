@@ -1,0 +1,43 @@
+# AI assistant local config (not part of the project)
+.claude/
+.agents/
+.codex/
+skills-lock.json
+
+# Node.js
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+coverage/
+.nyc_output/
+*.lcov
+
+# pnpm
+.pnpm-store/
+
+# Logs (runtime artifacts, not the log config)
+*.log.tmp
+
+# Bun compile output (regenerated)
+*.xizhao.bun-build/
