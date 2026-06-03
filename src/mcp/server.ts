@@ -2,7 +2,7 @@
  * MCP Server — creates and configures the Xizhao MCP server.
  *
  * Uses @modelcontextprotocol/sdk's McpServer high-level API.
- * Registers 5 tools (ADR-0010), each wrapped with withAudit middleware.
+ * Registers 6 tools (ADR-0010 + list_connections), each wrapped with withAudit middleware.
  *
  * Key constraints:
  *   - stdout is exclusively for MCP JSON-RPC (never console.log)
@@ -23,6 +23,7 @@ import { createCheckTaskStatusHandler } from "./tools/check-task-status.js";
 import { createDescribeTableHandler } from "./tools/describe-table.js";
 import { createExecuteSqlHandler } from "./tools/execute-sql.js";
 import { createExplainSqlHandler } from "./tools/explain-sql.js";
+import { createListConnectionsHandler } from "./tools/list-connections.js";
 import { createListTablesHandler } from "./tools/list-tables.js";
 
 export interface McpServerDeps {
@@ -33,7 +34,7 @@ export interface McpServerDeps {
 }
 
 /**
- * Create the Xizhao MCP server with all 5 tools registered.
+ * Create the Xizhao MCP server with all 6 tools registered.
  *
  * @param deps - Dependencies for audit and connection resolution
  * @returns Configured McpServer instance (not yet connected to transport)
@@ -57,15 +58,32 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   };
   const withAudit = createWithAudit(auditDeps);
 
+  // ─── Tool 0: list_connections ─────────────────────────────────
+  // This MUST be the first tool AI sees — it discovers what's available.
+  mcp.tool(
+    "list_connections",
+    "List all available database connections. " +
+      "ALWAYS call this tool first before any other tool to discover available connection names. " +
+      "Returns connection name, host, port, username, default schema, and policy for each connection.",
+    {},
+    withAudit(
+      "list_connections",
+      createListConnectionsHandler({ getRawDb: deps.getRawDb }),
+    ),
+  );
+
   // ─── Tool 1: execute_sql ───────────────────────────────────────
   mcp.tool(
     "execute_sql",
     "Execute a single SQL statement on a MySQL connection. " +
       "The statement is validated by the policy engine before execution. " +
       "DDL statements (CREATE TABLE, DROP TABLE, ALTER TABLE) may require approval. " +
-      "CREATE/DROP/ALTER DATABASE are permanently blocked.",
+      "CREATE/DROP/ALTER DATABASE are permanently blocked. " +
+      "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z.string().describe("Connection alias name"),
+      connection: z
+        .string()
+        .describe("Connection alias name (from list_connections)"),
       sql: z.string().min(1).describe("Single SQL statement to execute"),
     },
     withAudit(
@@ -78,9 +96,12 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   mcp.tool(
     "explain_sql",
     "Get the MySQL execution plan for a SQL statement using EXPLAIN FORMAT=JSON. " +
-      "Useful for understanding query performance before executing.",
+      "Useful for understanding query performance before executing. " +
+      "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z.string().describe("Connection alias name"),
+      connection: z
+        .string()
+        .describe("Connection alias name (from list_connections)"),
       sql: z.string().min(1).describe("SQL statement to explain"),
     },
     withAudit("explain_sql", createExplainSqlHandler()),
@@ -90,9 +111,12 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   mcp.tool(
     "list_tables",
     "List all tables in the connection's default schema (or a specified schema). " +
-      "Returns table name, type (TABLE/VIEW), and approximate row count.",
+      "Returns table name, type (TABLE/VIEW), and approximate row count. " +
+      "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z.string().describe("Connection alias name"),
+      connection: z
+        .string()
+        .describe("Connection alias name (from list_connections)"),
       schema: z
         .string()
         .optional()
@@ -104,9 +128,12 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   // ─── Tool 4: describe_table ────────────────────────────────────
   mcp.tool(
     "describe_table",
-    "Get the DDL (CREATE TABLE statement) and approximate row count for a table.",
+    "Get the DDL (CREATE TABLE statement) and approximate row count for a table. " +
+      "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z.string().describe("Connection alias name"),
+      connection: z
+        .string()
+        .describe("Connection alias name (from list_connections)"),
       table: z.string().describe("Table name"),
     },
     withAudit("describe_table", createDescribeTableHandler()),

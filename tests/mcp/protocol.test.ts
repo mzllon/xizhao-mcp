@@ -170,6 +170,7 @@ describe("mCP Server creation", () => {
       "describe_table",
       "execute_sql",
       "explain_sql",
+      "list_connections",
       "list_tables",
     ]);
   });
