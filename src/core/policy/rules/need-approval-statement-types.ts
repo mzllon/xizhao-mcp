@@ -22,6 +22,7 @@ export const needApprovalStatementTypes: PolicyRule = {
         kind: "need_approval",
         rule: "need-approval-statement-types",
         reason: `Statement type "${type}" requires approval`,
+        statementType: type,
       };
     }
     return null;

@@ -8,7 +8,12 @@ export const DecisionKind = {
 export type PolicyDecision =
   | { kind: typeof DecisionKind.Allow; modifiedSql?: string | undefined }
   | { kind: typeof DecisionKind.Deny; rule: string; reason: string }
-  | { kind: typeof DecisionKind.NeedApproval; rule: string; reason: string };
+  | {
+      kind: typeof DecisionKind.NeedApproval;
+      rule: string;
+      reason: string;
+      statementType?: string | undefined;
+    };
 
 /** Statement type classification for policy rules */
 export type StatementType =
@@ -54,6 +59,8 @@ export interface PolicyContext {
   sql: string;
   sqlHash: string;
   connection: { name: string; policy: PolicyConfig };
+  /** SQLite handle — only needed by approved-task-override rule */
+  db?: import("better-sqlite3").Database | undefined;
 }
 
 /** A single policy rule in the evaluation chain */

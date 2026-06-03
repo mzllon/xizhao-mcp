@@ -68,7 +68,10 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       connection: z.string().describe("Connection alias name"),
       sql: z.string().min(1).describe("Single SQL statement to execute"),
     },
-    withAudit("execute_sql", createExecuteSqlHandler()),
+    withAudit(
+      "execute_sql",
+      createExecuteSqlHandler({ getRawDb: deps.getRawDb }),
+    ),
   );
 
   // ─── Tool 2: explain_sql ───────────────────────────────────────

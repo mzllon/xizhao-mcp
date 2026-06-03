@@ -3,13 +3,13 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
  * check_task_status MCP tool handler.
  *
  * Looks up an approval task by ID and returns its status.
- * This tool doesn't need a connection — it queries the local approval_tasks table.
- * Full approval workflow (create/approve/reject) is implemented in Stage 08.
+ * This tool doesn't need a MySQL connection — it queries the local approval_tasks table.
  */
 import type {
   ToolHandlerArgs,
   ToolHandlerContext,
 } from "../middleware/audit.js";
+import { getTask } from "../../core/approval.js";
 import { XizhaoError } from "../../shared/errors.js";
 import { success } from "../response.js";
 
@@ -31,15 +31,9 @@ export function createCheckTaskStatusHandler(deps: CheckTaskDeps) {
     }
 
     const db = deps.getRawDb();
-    const row = db
-      .prepare(
-        `SELECT id, status, connection_name, sql, statement_type, trigger_rule,
-                expires_at, decided_at, decider_kind, modified_sql, decision_note
-         FROM approval_tasks WHERE id = ?`,
-      )
-      .get(taskId) as Record<string, unknown> | undefined;
+    const task = getTask(db, taskId);
 
-    if (!row) {
+    if (!task) {
       throw new XizhaoError(
         "CONNECTION_NOT_FOUND",
         `Task "${taskId}" not found`,
@@ -48,17 +42,17 @@ export function createCheckTaskStatusHandler(deps: CheckTaskDeps) {
 
     return success(
       {
-        taskId: row.id as string,
-        status: row.status as string,
-        connectionName: row.connection_name as string,
-        sql: row.sql as string,
-        statementType: row.statement_type as string,
-        triggerRule: row.trigger_rule as string,
-        expiresAt: row.expires_at as string,
-        decidedAt: (row.decided_at as string | null) ?? undefined,
-        deciderKind: (row.decider_kind as string | null) ?? undefined,
-        modifiedSql: (row.modified_sql as string | null) ?? undefined,
-        decisionNote: (row.decision_note as string | null) ?? undefined,
+        taskId: task.id,
+        status: task.status,
+        connectionName: task.connectionName,
+        sql: task.sql,
+        statementType: task.statementType,
+        triggerRule: task.triggerRule,
+        expiresAt: task.expiresAt,
+        decidedAt: task.decidedAt,
+        deciderKind: task.deciderKind,
+        modifiedSql: task.modifiedSql,
+        decisionNote: task.decisionNote,
       },
       handlerCtx.auditId,
     );

@@ -15,6 +15,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
  *   5. Exit
  */
 import { Command } from "commander";
+import { expireOverdueTasks } from "../../core/approval.js";
 import { loadOrCreateMasterKey } from "../../core/crypto.js";
 import { createLogger } from "../../core/logger.js";
 import { closeAllPools } from "../../core/mysql.js";
@@ -92,4 +93,24 @@ export const clientCommand = new Command("client")
     await mcp.connect(transport);
 
     logger.info("Xizhao MCP server connected on stdio");
+
+    // Start approval task expiry job — runs every hour
+    const expiryTimer = setInterval(
+      () => {
+        try {
+          const count = expireOverdueTasks(storage.raw, new Date());
+          if (count > 0) {
+            logger.info({ count }, "Expired overdue approval tasks");
+          }
+        } catch (e: unknown) {
+          logger.error({ err: e }, "Error running approval expiry job");
+        }
+      },
+      60 * 60 * 1000,
+    );
+
+    // Prevent the timer from keeping the process alive
+    if (expiryTimer.unref) {
+      expiryTimer.unref();
+    }
   });
