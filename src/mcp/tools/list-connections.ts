@@ -16,6 +16,10 @@ import { success } from "../response.js";
 export interface ListConnectionsDeps {
   /** Get the raw SQLite handle */
   getRawDb: () => import("better-sqlite3").Database;
+  /** Default connection name (from CLI args or env) */
+  defaultConnection?: string;
+  /** Default schema (from CLI args or env) */
+  defaultSchema?: string;
 }
 
 export function createListConnectionsHandler(deps: ListConnectionsDeps) {
@@ -27,6 +31,12 @@ export function createListConnectionsHandler(deps: ListConnectionsDeps) {
     const connections = listConnections(db);
     return success(
       {
+        ...(deps.defaultConnection || deps.defaultSchema
+          ? {
+              defaultConnection: deps.defaultConnection,
+              defaultSchema: deps.defaultSchema,
+            }
+          : {}),
         connections: connections.map((c) => ({
           name: c.name,
           host: c.host,
@@ -34,6 +44,7 @@ export function createListConnectionsHandler(deps: ListConnectionsDeps) {
           username: c.username,
           defaultSchema: c.defaultSchema,
           policy: c.policy,
+          description: c.description,
         })),
       },
       handlerCtx.auditId,

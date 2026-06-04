@@ -12,6 +12,7 @@ export interface ConnectionInput {
   password: string;
   defaultSchema?: string | undefined;
   policy: string;
+  description?: string | undefined;
 }
 
 export interface Connection {
@@ -24,6 +25,7 @@ export interface Connection {
   password: string;
   defaultSchema?: string | undefined;
   policy: string;
+  description?: string | undefined;
   createdAt: string;
   updatedAt: string;
   lastUsedAt?: string | undefined;
@@ -38,6 +40,7 @@ export interface ConnectionInfo {
   username: string;
   defaultSchema?: string | undefined;
   policy: string;
+  description?: string | undefined;
   createdAt: string;
   updatedAt: string;
   lastUsedAt?: string | undefined;
@@ -79,8 +82,8 @@ export function createConnection(
 
   db.prepare(
     `
-    INSERT INTO connections (id, name, host, port, username, password_enc, default_schema, policy, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO connections (id, name, host, port, username, password_enc, default_schema, policy, description, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
   ).run(
     id,
@@ -91,6 +94,7 @@ export function createConnection(
     passwordEnc,
     input.defaultSchema ?? null,
     input.policy,
+    input.description ?? null,
     now,
     now,
   );
@@ -103,6 +107,7 @@ export function createConnection(
     username: input.username,
     defaultSchema: input.defaultSchema,
     policy: input.policy,
+    description: input.description,
     createdAt: now,
     updatedAt: now,
   };
@@ -128,6 +133,7 @@ export function getConnection(
     password: decryptSecret(row.password_enc as string, masterKey),
     defaultSchema: (row.default_schema as string | null) ?? undefined,
     policy: row.policy as string,
+    description: (row.description as string | null) ?? undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     lastUsedAt: (row.last_used_at as string | null) ?? undefined,
@@ -147,6 +153,7 @@ export function listConnections(db: BetterSqlite3.Database): ConnectionInfo[] {
     username: row.username as string,
     defaultSchema: (row.default_schema as string | null) ?? undefined,
     policy: row.policy as string,
+    description: (row.description as string | null) ?? undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     lastUsedAt: (row.last_used_at as string | null) ?? undefined,
@@ -189,6 +196,10 @@ export function updateConnection(
     updates.push("policy = ?");
     values.push(patch.policy);
   }
+  if (patch.description !== undefined) {
+    updates.push("description = ?");
+    values.push(patch.description || null);
+  }
 
   if (updates.length === 0) return stripPassword(existing);
 
@@ -212,6 +223,7 @@ export function updateConnection(
     username: updated.username as string,
     defaultSchema: (updated.default_schema as string | null) ?? undefined,
     policy: updated.policy as string,
+    description: (updated.description as string | null) ?? undefined,
     createdAt: updated.created_at as string,
     updatedAt: updated.updated_at as string,
     lastUsedAt: (updated.last_used_at as string | null) ?? undefined,

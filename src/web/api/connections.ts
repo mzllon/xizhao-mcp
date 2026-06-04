@@ -56,6 +56,7 @@ export function createConnectionsApi(deps: {
       password: string;
       defaultSchema?: string;
       policy: string;
+      description?: string;
     };
     try {
       const info = createConnection(db, body, key);
@@ -78,6 +79,7 @@ export function createConnectionsApi(deps: {
       password?: string;
       defaultSchema?: string;
       policy?: string;
+      description?: string;
     };
     try {
       const info = updateConnection(db, name, body, key);

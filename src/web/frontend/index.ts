@@ -198,13 +198,14 @@ function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
 async function loadConnections() {
   const list = await api('/api/connections');
   if (!list.length) { document.getElementById('connections-list').innerHTML = '<div class="empty">暂无连接</div>'; return; }
-  document.getElementById('connections-list').innerHTML = '<table><thead><tr><th>名称</th><th>主机</th><th>用户</th><th>数据库</th><th>策略</th><th>操作</th></tr></thead><tbody>'
+  document.getElementById('connections-list').innerHTML = '<table><thead><tr><th>名称</th><th>主机</th><th>用户</th><th>数据库</th><th>策略</th><th>描述</th><th>操作</th></tr></thead><tbody>'
     + list.map(c => \`<tr>
       <td><strong>\${esc(c.name)}</strong></td>
       <td>\${c.host}:\${c.port}</td>
       <td>\${esc(c.username)}</td>
       <td>\${c.defaultSchema || '-'}</td>
       <td>\${JSON.parse(c.policy).preset || 'custom'}</td>
+      <td>\${esc(c.description) || '<span style="color:var(--muted)">-</span>'}</td>
       <td><button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="testConn('\${c.name}')">测试</button>
           <button class="btn btn-sm btn-deny" onclick="deleteConn('\${c.name}')">删除</button></td>
     </tr>\`).join('') + '</tbody></table>';
@@ -228,6 +229,7 @@ function showAddConnection() {
       <input id="nc-user" placeholder="用户名" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
       <input id="nc-pass" type="password" placeholder="密码" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
       <input id="nc-schema" placeholder="默认数据库 (可选)" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+      <input id="nc-desc" placeholder="描述 (可选，如 项目A开发库)" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
     </div>
     <div style="margin-top:1rem">
       <button class="btn btn-approve" onclick="submitNewConn()">创建</button>
@@ -243,6 +245,7 @@ async function submitNewConn() {
     username: document.getElementById('nc-user').value,
     password: document.getElementById('nc-pass').value,
     defaultSchema: document.getElementById('nc-schema').value || undefined,
+    description: document.getElementById('nc-desc').value || undefined,
     policy: JSON.stringify({ preset: 'dev-default' }),
   };
   const r = await api('/api/connections', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });

@@ -61,56 +61,80 @@ async function shutdown(
 
 export const clientCommand = new Command("client")
   .description("启动 MCP Stdio 服务")
-  .action(async () => {
-    // Silence console to keep stdout pure for MCP protocol
-    console.log = () => {};
-    console.info = () => {};
-    console.warn = () => {};
-    console.error = () => {};
+  .option(
+    "--default-connection <name>",
+    "Default connection name (project-level MCP config)",
+  )
+  .option(
+    "--default-schema <schema>",
+    "Default schema (project-level MCP config)",
+  )
+  .action(
+    async (opts: { defaultConnection?: string; defaultSchema?: string }) => {
+      // Silence console to keep stdout pure for MCP protocol
+      console.log = () => {};
+      console.info = () => {};
+      console.warn = () => {};
+      console.error = () => {};
 
-    // Detect verbose from parent program options
-    const verbose = clientCommand.parent?.opts()?.verbose === true;
-    const logger = createLogger({ verbose });
+      // Detect verbose from parent program options
+      const verbose = clientCommand.parent?.opts()?.verbose === true;
+      const logger = createLogger({ verbose });
 
-    logger.info("Starting Xizhao MCP server...");
+      // Resolve project defaults: CLI args > env vars
+      const defaultConnection =
+        opts.defaultConnection ?? process.env.XIZHAO_DEFAULT_CONNECTION;
+      const defaultSchema =
+        opts.defaultSchema ?? process.env.XIZHAO_DEFAULT_SCHEMA;
 
-    // Initialize storage and crypto
-    const storage = openStorage();
-    const masterKey = loadOrCreateMasterKey();
+      logger.info("Starting Xizhao MCP server...");
+      if (defaultConnection || defaultSchema) {
+        logger.info(
+          { defaultConnection, defaultSchema },
+          "Project defaults loaded",
+        );
+      }
 
-    // Create MCP server
-    const mcp = createMcpServer({
-      getRawDb: () => storage.raw,
-      getMasterKey: () => masterKey,
-    });
+      // Initialize storage and crypto
+      const storage = openStorage();
+      const masterKey = loadOrCreateMasterKey();
 
-    // Register signal handlers for graceful shutdown
-    process.on("SIGINT", () => shutdown("SIGINT", storage, logger));
-    process.on("SIGTERM", () => shutdown("SIGTERM", storage, logger));
+      // Create MCP server
+      const mcp = createMcpServer({
+        getRawDb: () => storage.raw,
+        getMasterKey: () => masterKey,
+        ...(defaultConnection ? { defaultConnection } : {}),
+        ...(defaultSchema ? { defaultSchema } : {}),
+      });
 
-    // Connect to stdio transport
-    const transport = new StdioServerTransport();
-    await mcp.connect(transport);
+      // Register signal handlers for graceful shutdown
+      process.on("SIGINT", () => shutdown("SIGINT", storage, logger));
+      process.on("SIGTERM", () => shutdown("SIGTERM", storage, logger));
 
-    logger.info("Xizhao MCP server connected on stdio");
+      // Connect to stdio transport
+      const transport = new StdioServerTransport();
+      await mcp.connect(transport);
 
-    // Start approval task expiry job — runs every hour
-    const expiryTimer = setInterval(
-      () => {
-        try {
-          const count = expireOverdueTasks(storage.raw, new Date());
-          if (count > 0) {
-            logger.info({ count }, "Expired overdue approval tasks");
+      logger.info("Xizhao MCP server connected on stdio");
+
+      // Start approval task expiry job — runs every hour
+      const expiryTimer = setInterval(
+        () => {
+          try {
+            const count = expireOverdueTasks(storage.raw, new Date());
+            if (count > 0) {
+              logger.info({ count }, "Expired overdue approval tasks");
+            }
+          } catch (e: unknown) {
+            logger.error({ err: e }, "Error running approval expiry job");
           }
-        } catch (e: unknown) {
-          logger.error({ err: e }, "Error running approval expiry job");
-        }
-      },
-      60 * 60 * 1000,
-    );
+        },
+        60 * 60 * 1000,
+      );
 
-    // Prevent the timer from keeping the process alive
-    if (expiryTimer.unref) {
-      expiryTimer.unref();
-    }
-  });
+      // Prevent the timer from keeping the process alive
+      if (expiryTimer.unref) {
+        expiryTimer.unref();
+      }
+    },
+  );

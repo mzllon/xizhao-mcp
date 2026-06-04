@@ -73,6 +73,10 @@ export function withAudit<TIn, TOut>(
 
 // 注册
 const tools = {
+  list_connections: {
+    handler: withAudit("list_connections", listConnectionsHandler),
+    inputSchema,
+  },
   execute_sql: {
     handler: withAudit("execute_sql", executeSqlHandler),
     inputSchema,
@@ -175,17 +179,19 @@ export const requestContext = new AsyncLocalStorage<RequestContext>();
 
 ### v1 工具清单（最终）
 
-| 工具                | 输入                      | 输出                                                                       |
-| ------------------- | ------------------------- | -------------------------------------------------------------------------- |
-| `execute_sql`       | `{ connection, sql }`     | `{ kind, columns?, rows?, rowCount?, affectedRows?, truncated, auditId }`  |
-| `explain_sql`       | `{ connection, sql }`     | `{ plan, warning?, auditId }`                                              |
-| `list_tables`       | `{ connection, schema? }` | `{ tables: [{name, type, rowCount?}], auditId }`                           |
-| `describe_table`    | `{ connection, table }`   | `{ ddl, rowCount?, auditId }`                                              |
-| `check_task_status` | `{ taskId }`              | `{ status, expiresAt?, decidedAt?, modifiedSql?, decisionNote?, auditId }` |
+| 工具                | 输入                      | 输出                                                                              |
+| ------------------- | ------------------------- | --------------------------------------------------------------------------------- |
+| `list_connections`  | `{}`                      | `{ connections: [{name, host, port, username, defaultSchema, policy}], auditId }` |
+| `execute_sql`       | `{ connection, sql }`     | `{ kind, columns?, rows?, rowCount?, affectedRows?, truncated, auditId }`         |
+| `explain_sql`       | `{ connection, sql }`     | `{ plan, warning?, auditId }`                                                     |
+| `list_tables`       | `{ connection, schema? }` | `{ tables: [{name, type, rowCount?}], auditId }`                                  |
+| `describe_table`    | `{ connection, table }`   | `{ ddl, rowCount?, auditId }`                                                     |
+| `check_task_status` | `{ taskId }`              | `{ status, expiresAt?, decidedAt?, modifiedSql?, decisionNote?, auditId }`        |
+
+**调用顺序**：AI 必须先调用 `list_connections` 发现可用连接名，再用 `connection` 参数调用其余工具。
 
 砍掉 PRD 原列表中的：
 
-- `list_connections` (T-05) —— Client 模式单用户场景下，用户已知自己配置的连接，AI 不需要列。
 - `list_my_tasks` (T-07) —— 与 `check_task_status` 重叠，AI 知道 taskId 直接查即可。
 
 ### Stdio 通信注意点
@@ -202,15 +208,16 @@ export const requestContext = new AsyncLocalStorage<RequestContext>();
 - 审计与业务解耦，新 tool 自动获得审计。
 - 错误格式结构化，AI 跨客户端行为可预测。
 - TypeScript 严格类型贯穿 schema → handler → response。
+- `list_connections` 让 AI 自主发现可用连接，无需开发者手动告知连接名。
 
 **已接受的代价**：
 
 - 工具响应 content text 是 JSON 字符串而非 plain text，某些 MCP 客户端在错误展示时把 JSON 当字面字符串显示给最终用户。AI 看到的是结构化的，但最终用户看到的可能是裸 JSON。**这是有意取舍**——AI 才是主要消费者。
 - `_meta` 字段被弃用，丧失协议层的元信息传递能力。后续若 MCP 协议普及 `_meta`，再迁移。
-- 砍掉 `list_connections` 和 `list_my_tasks`，AI 必须通过 dashboard 查连接列表、查任务列表。Server 模式（v2）需补回。
+- 砍掉 `list_my_tasks`，AI 必须通过 `check_task_status` 按 taskId 查询。
 
 **未来重新审视的触发条件**：
 
 - MCP 协议升级 → 跟进 SDK 版本，可能涉及 `_meta` 使用。
-- Server 模式上线 → `list_connections` 必须补回（用户多，AI 需要列出可用连接）。
+- Server 模式上线 → `list_connections` 需增加按用户可见性过滤。
 - 出现 AI 反馈"找不到自己的任务" → 重新评估 `list_my_tasks`。

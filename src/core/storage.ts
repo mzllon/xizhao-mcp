@@ -62,6 +62,7 @@ function runMigration(db: Database.Database) {
     "  password_enc    TEXT NOT NULL,",
     "  default_schema  TEXT,",
     "  policy          TEXT NOT NULL,",
+    "  description     TEXT,",
     "  created_at      TEXT NOT NULL,",
     "  updated_at      TEXT NOT NULL,",
     "  last_used_at    TEXT",
@@ -116,4 +117,15 @@ function runMigration(db: Database.Database) {
   ].join("\n");
 
   db.exec(sql);
+
+  // Idempotent column additions — no-op if column already exists
+  const addColumn = (table: string, col: string, type: string) => {
+    try {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
+    } catch {
+      // Column already exists — ignore
+    }
+  };
+
+  addColumn("connections", "description", "TEXT");
 }

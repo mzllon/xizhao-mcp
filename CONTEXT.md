@@ -8,15 +8,15 @@
 
 - **寓意**：AI 生成的 SQL 中可能藏着"妖怪"（危险模式、未授权操作、SQL 注入等），犀照用 AST 解析 + 策略引擎把它们一一照出。
 - **双关**："犀"既指灵犀（AI 与数据库心灵相通），又指犀角（识别妖物的工具）。"照"即审计、明察。
-- **Slogan**：*犀照 SQL，众妖毕现。*
+- **Slogan**：_犀照 SQL，众妖毕现。_
 
 CLI 命令、配置目录、API Key 前缀、环境变量前缀：
 
-| 项 | 值 |
-|----|---|
-| CLI 命令 | `xizhao` |
-| 配置目录 | `~/.xizhao/` |
-| API Key 前缀 | `xz_`（参考 GitHub `ghp_`、Stripe `sk_` 的 3 字符惯例） |
+| 项           | 值                                                            |
+| ------------ | ------------------------------------------------------------- |
+| CLI 命令     | `xizhao`                                                      |
+| 配置目录     | `~/.xizhao/`                                                  |
+| API Key 前缀 | `xz_`（参考 GitHub `ghp_`、Stripe `sk_` 的 3 字符惯例）       |
 | 环境变量前缀 | `XIZHAO_*`（如 `XIZHAO_LOG_LEVEL`、`XIZHAO_MASTER_KEY_FILE`） |
 
 ## 部署形态
@@ -40,8 +40,16 @@ _Avoid_: 业务库、源库
 ## 核心概念
 
 **连接 (Connection)**:
-一组目标数据库访问配置的命名别名，包含：主机、端口、用户、密码（加密存储）、默认库、安全策略。通过别名引用，不直接接触凭证。
+一组目标数据库访问配置的命名别名，包含：主机、端口、用户、密码（加密存储）、默认库、安全策略、描述。通过别名引用，不直接接触凭证。AI 通过 `list_connections` 工具发现可用连接名，再用别名调用其他工具。
 _Avoid_: 数据源、DataSource、DB instance
+
+**连接描述 (Connection Description)**:
+创建连接时由开发者填写的一段自由文本，说明该连接的用途和适用项目（如 `"项目 A 开发库，schema: app_a"`）。`list_connections` 会原样返回给 AI，帮助 AI 在多个连接中准确选择，而不是猜测。也可作为 CLI `--default-connection` 的辅助说明。
+_Avoid_: 连接备注、连接注释
+
+**项目级默认值 (Project Defaults)**:
+一个项目希望 AI 默认使用的连接名和 schema。通过三种机制叠加实现（优先级从高到低）：① CLI 参数 `--default-connection` / `--default-schema`（项目级 MCP 配置时由客户端传参）；② `list_connections` 返回的连接描述（AI 侧自行判断）；③ 项目指令文件（CLAUDE.md 等，软约束兜底）。不依赖服务端感知项目目录。
+_Avoid_: 项目配置、workspace 配置
 
 **策略引擎 (Policy Engine)**:
 MCP 工具执行前必须通过的检查层。输入：原始 SQL + 调用者 + 连接配置。输出：`allow` / `deny` / `need_approval`（最后一种触发审批任务）。是产品最核心的防线。
@@ -84,6 +92,7 @@ _Avoid_: reviewer、authorizer
 ## 边界
 
 **不在 v1 范围内**:
+
 - 生产数据库访问
 - 多租户 / 跨组织隔离
 - 表级 / 行级 / 列级权限
@@ -93,4 +102,5 @@ _Avoid_: reviewer、authorizer
 - Webhook 通知、SaaS 部署
 
 **v1 包含（PRD 原本标 P2 / 砍掉、后又加回的）**:
+
 - Self-approval 工作流（开发者审批自己 AI 的请求，见 [ADR-0008](./docs/adr/0008-policy-rules-and-approval-workflow.md)）

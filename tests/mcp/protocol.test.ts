@@ -29,6 +29,7 @@ function createTestStorage() {
     "  id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, host TEXT NOT NULL,",
     "  port INTEGER NOT NULL DEFAULT 3306, username TEXT NOT NULL,",
     "  password_enc TEXT NOT NULL, default_schema TEXT, policy TEXT NOT NULL,",
+    "  description TEXT,",
     "  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, last_used_at TEXT",
     ");",
     "CREATE TABLE IF NOT EXISTS audit_log (",

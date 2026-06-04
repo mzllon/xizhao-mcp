@@ -28,8 +28,11 @@ export const connCommand = new Command("conn")
         console.log(chalk.bold("\n数据库连接:\n"));
         for (const c of conns) {
           const policyLabel = tryParsePolicyLabel(c.policy);
+          const descPart = c.description
+            ? chalk.dim(` — ${c.description}`)
+            : "";
           console.log(
-            `  ${chalk.cyan(c.name)}  ${c.username}@${c.host}:${c.port}  ${c.defaultSchema ? chalk.dim(`[${c.defaultSchema}]`) : ""}  ${chalk.dim(policyLabel)}`,
+            `  ${chalk.cyan(c.name)}  ${c.username}@${c.host}:${c.port}  ${c.defaultSchema ? chalk.dim(`[${c.defaultSchema}]`) : ""}  ${chalk.dim(policyLabel)}${descPart}`,
           );
         }
         console.log();
@@ -54,6 +57,9 @@ export const connCommand = new Command("conn")
         const username = await input({ message: "用户名:", default: "root" });
         const pwd = await password({ message: "密码:" });
         const defaultSchema = await input({ message: "默认数据库（可选）:" });
+        const description = await input({
+          message: '连接描述（可选，如"项目A开发库"）:',
+        });
 
         createConnection(
           raw,
@@ -64,6 +70,7 @@ export const connCommand = new Command("conn")
             username,
             password: pwd,
             defaultSchema: defaultSchema || undefined,
+            description: description || undefined,
             policy: JSON.stringify({ preset: "dev-default" }),
           },
           masterKey,
@@ -87,12 +94,17 @@ export const connCommand = new Command("conn")
           const portStr = await input({ message: "端口（留空不修改）:" });
           const username = await input({ message: "用户名（留空不修改）:" });
           const pwd = await password({ message: "密码（留空不修改）:" });
+          const description = await input({
+            message: "描述（留空不修改，输入 CLEAR 清空）:",
+          });
 
           const patch: Record<string, unknown> = {};
           if (host) patch.host = host;
           if (portStr) patch.port = Number.parseInt(portStr, 10);
           if (username) patch.username = username;
           if (pwd) patch.password = pwd;
+          if (description === "CLEAR") patch.description = "";
+          else if (description) patch.description = description;
 
           updateConnection(raw, name, patch, masterKey);
           console.log(chalk.green(`✅ 连接 "${name}" 已更新`));

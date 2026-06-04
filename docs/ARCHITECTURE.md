@@ -18,7 +18,7 @@ v1 有两个独立进程，共享同一套文件系统（`~/.xizhao/`）：
 │  │  (Claude Code │   JSON-RPC      │                           │     │
 │  │   / Codex /   │   over Stdio    │  ┌───────────────────┐   │     │
 │  │   Cursor)     │                 │  │ MCP Server        │   │     │
-│  └──────────────┘                 │  │  ├─ tools (×5)    │   │     │
+│  └──────────────┘                 │  │  ├─ tools (×6)    │   │     │
 │                                   │  │  ├─ withAudit     │   │     │
 │                                   │  │  └─ AsyncLocal    │   │     │
 │                                   │  └───────┬───────────┘   │     │
@@ -52,7 +52,8 @@ v1 有两个独立进程，共享同一套文件系统（`~/.xizhao/`）：
 │                                  │  │ storage (同一个 db) │   │   │  │
 │                                  │  └───────────────────┘   │   │  │
 │                                  │  ┌───────────────────┐   │   │  │
-│                                  │  │ Next.js Frontend   │   │   │  │
+│                                  │  │ Embedded SPA       │   │   │  │
+│                                  │  │ (HTML/CSS/JS)      │   │   │  │
 │                                  │  └───────────────────┘   │   │  │
 │                                  └───────────────────────────┘   │  │
 │                                                                   │  │
@@ -198,9 +199,9 @@ xizhao dashboard [--port 9020]
   ├─ Hono HTTP Server
   │   ├─ 静态 token 认证（Jupyter 风格）
   │   ├─ REST API (/api/connections, /api/policy, ...)
-  │   └─ 代理 Next.js 前端
-  ├─ Next.js App (SSR/CSR)
-  │   └─ 10 页（概览/连接/策略/审计/审批/设置）
+  │   └─ 嵌入式 SPA 前端（HTML/CSS/JS）
+  ├─ Embedded SPA (HTML/CSS/JS, no build step)
+  │   └─ 4 页（概览/连接/审批/审计）
   ├─ SQLite (同一个 config.db, WAL mode)
   │   └─ 与 client 进程并发读写
   └─ 启动时

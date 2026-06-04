@@ -31,6 +31,10 @@ export interface McpServerDeps {
   getRawDb: () => BetterSqlite3.Database;
   /** Get the master key for decrypting connection passwords */
   getMasterKey: () => Buffer;
+  /** Default connection name (from CLI args or env, project-level MCP config) */
+  defaultConnection?: string;
+  /** Default schema (from CLI args or env, project-level MCP config) */
+  defaultSchema?: string;
 }
 
 /**
@@ -64,13 +68,24 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     "list_connections",
     "List all available database connections. " +
       "ALWAYS call this tool first before any other tool to discover available connection names. " +
-      "Returns connection name, host, port, username, default schema, and policy for each connection.",
+      "Returns connection name, host, port, username, default schema, policy, and description for each connection.",
     {},
     withAudit(
       "list_connections",
-      createListConnectionsHandler({ getRawDb: deps.getRawDb }),
+      createListConnectionsHandler({
+        getRawDb: deps.getRawDb,
+        ...(deps.defaultConnection
+          ? { defaultConnection: deps.defaultConnection }
+          : {}),
+        ...(deps.defaultSchema ? { defaultSchema: deps.defaultSchema } : {}),
+      }),
     ),
   );
+
+  // Dynamic connection description — injects default when configured
+  const connDesc = deps.defaultConnection
+    ? `Connection alias name. Default: "${deps.defaultConnection}"`
+    : "Connection alias name (from list_connections)";
 
   // ─── Tool 1: execute_sql ───────────────────────────────────────
   mcp.tool(
@@ -81,9 +96,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       "CREATE/DROP/ALTER DATABASE are permanently blocked. " +
       "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z
-        .string()
-        .describe("Connection alias name (from list_connections)"),
+      connection: z.string().describe(connDesc),
       sql: z.string().min(1).describe("Single SQL statement to execute"),
     },
     withAudit(
@@ -99,9 +112,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       "Useful for understanding query performance before executing. " +
       "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z
-        .string()
-        .describe("Connection alias name (from list_connections)"),
+      connection: z.string().describe(connDesc),
       sql: z.string().min(1).describe("SQL statement to explain"),
     },
     withAudit("explain_sql", createExplainSqlHandler()),
@@ -114,9 +125,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       "Returns table name, type (TABLE/VIEW), and approximate row count. " +
       "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z
-        .string()
-        .describe("Connection alias name (from list_connections)"),
+      connection: z.string().describe(connDesc),
       schema: z
         .string()
         .optional()
@@ -131,9 +140,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     "Get the DDL (CREATE TABLE statement) and approximate row count for a table. " +
       "IMPORTANT: Use list_connections first to find the correct connection name.",
     {
-      connection: z
-        .string()
-        .describe("Connection alias name (from list_connections)"),
+      connection: z.string().describe(connDesc),
       table: z.string().describe("Table name"),
     },
     withAudit("describe_table", createDescribeTableHandler()),

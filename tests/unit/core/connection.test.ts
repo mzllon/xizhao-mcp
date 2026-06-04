@@ -118,6 +118,36 @@ describe("connection", () => {
         close();
       }
     });
+
+    it("stores description when provided", () => {
+      const { raw, masterKey, close } = setup();
+      try {
+        const info = createConnection(
+          raw,
+          { ...defaultInput, description: "项目A开发库" },
+          masterKey,
+        );
+        expect(info.description).toBe("项目A开发库");
+        const conn = getConnection(raw, "dev-db", masterKey);
+        expect(conn.description).toBe("项目A开发库");
+      } finally {
+        close();
+      }
+    });
+
+    it("stores undefined description as null", () => {
+      const { raw, masterKey, close } = setup();
+      try {
+        const info = createConnection(raw, defaultInput, masterKey);
+        expect(info.description).toBeUndefined();
+        const row = raw
+          .prepare("SELECT description FROM connections WHERE name = ?")
+          .get("dev-db") as { description: string | null };
+        expect(row.description).toBeNull();
+      } finally {
+        close();
+      }
+    });
   });
 
   describe("getConnection", () => {
@@ -170,6 +200,32 @@ describe("connection", () => {
         close();
       }
     });
+
+    it("includes description in listing", () => {
+      const { raw, masterKey, close } = setup();
+      try {
+        createConnection(
+          raw,
+          { ...defaultInput, description: "项目A开发库" },
+          masterKey,
+        );
+        const list = listConnections(raw);
+        expect(list[0].description).toBe("项目A开发库");
+      } finally {
+        close();
+      }
+    });
+
+    it("includes undefined description when not set", () => {
+      const { raw, masterKey, close } = setup();
+      try {
+        createConnection(raw, defaultInput, masterKey);
+        const list = listConnections(raw);
+        expect(list[0].description).toBeUndefined();
+      } finally {
+        close();
+      }
+    });
   });
 
   describe("updateConnection", () => {
@@ -208,6 +264,44 @@ describe("connection", () => {
         const info = createConnection(raw, defaultInput, masterKey);
         const updated = updateConnection(raw, "dev-db", {}, masterKey);
         expect(updated.host).toBe(info.host);
+      } finally {
+        close();
+      }
+    });
+
+    it("updates description", () => {
+      const { raw, masterKey, close } = setup();
+      try {
+        createConnection(raw, defaultInput, masterKey);
+        const updated = updateConnection(
+          raw,
+          "dev-db",
+          { description: "新的描述" },
+          masterKey,
+        );
+        expect(updated.description).toBe("新的描述");
+        const conn = getConnection(raw, "dev-db", masterKey);
+        expect(conn.description).toBe("新的描述");
+      } finally {
+        close();
+      }
+    });
+
+    it("clears description with empty string", () => {
+      const { raw, masterKey, close } = setup();
+      try {
+        createConnection(
+          raw,
+          { ...defaultInput, description: "项目A开发库" },
+          masterKey,
+        );
+        const updated = updateConnection(
+          raw,
+          "dev-db",
+          { description: "" },
+          masterKey,
+        );
+        expect(updated.description).toBeUndefined();
       } finally {
         close();
       }

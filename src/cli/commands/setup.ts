@@ -40,6 +40,10 @@ export const setupCommand = new Command("setup")
         message: "默认数据库（可选，回车跳过）:",
       });
 
+      const description = await input({
+        message: '连接描述（可选，如"项目A开发库"）:',
+      });
+
       // Step 2: Test connection
       const spinner = ora("测试连接...").start();
       try {
@@ -128,6 +132,7 @@ export const setupCommand = new Command("setup")
           username,
           password: pwd,
           defaultSchema: defaultSchema || undefined,
+          description: description || undefined,
           policy,
         },
         masterKey,
