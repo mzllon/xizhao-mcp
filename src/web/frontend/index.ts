@@ -207,6 +207,7 @@ async function loadConnections() {
       <td>\${JSON.parse(c.policy).preset || 'custom'}</td>
       <td>\${esc(c.description) || '<span style="color:var(--muted)">-</span>'}</td>
       <td><button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="testConn('\${c.name}')">测试</button>
+          <button class="btn btn-sm" style="background:var(--muted);color:#fff" onclick="editConn('\${c.name}')">编辑</button>
           <button class="btn btn-sm btn-deny" onclick="deleteConn('\${c.name}')">删除</button></td>
     </tr>\`).join('') + '</tbody></table>';
 }
@@ -249,6 +250,45 @@ async function submitNewConn() {
     policy: JSON.stringify({ preset: 'dev-default' }),
   };
   const r = await api('/api/connections', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (r.error) { alert('Error: ' + r.error); return; }
+  closeModal();
+  loadConnections();
+}
+async function editConn(name) {
+  const c = await api('/api/connections/' + name);
+  if (c.error) { alert('Error: ' + c.error); return; }
+  const preset = JSON.parse(c.policy || '{}').preset || 'dev-default';
+  document.getElementById('modal-root').innerHTML = \`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3>编辑连接 "\${esc(name)}"</h3>
+    <div style="display:grid;gap:.7rem">
+      <input id="ec-host" placeholder="MySQL 主机" value="\${esc(c.host)}" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+      <input id="ec-port" placeholder="端口" value="\${c.port}" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+      <input id="ec-user" placeholder="用户名" value="\${esc(c.username)}" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+      <input id="ec-pass" type="password" placeholder="密码 (留空不修改)" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+      <input id="ec-schema" placeholder="默认数据库 (可选)" value="\${esc(c.defaultSchema || '')}" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+      <input id="ec-desc" placeholder="描述 (可选)" value="\${esc(c.description || '')}" style="background:#0f172a;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.5rem">
+    </div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-approve" onclick="submitEditConn('\${name}')">保存</button>
+      <button class="btn btn-deny" onclick="closeModal()">取消</button>
+    </div>
+  </div></div>\`;
+}
+async function submitEditConn(name) {
+  const body = {};
+  const host = document.getElementById('ec-host').value;
+  const port = document.getElementById('ec-port').value;
+  const user = document.getElementById('ec-user').value;
+  const pass = document.getElementById('ec-pass').value;
+  const schema = document.getElementById('ec-schema').value;
+  const desc = document.getElementById('ec-desc').value;
+  if (host) body.host = host;
+  if (port) body.port = Number(port) || 3306;
+  if (user) body.username = user;
+  if (pass) body.password = pass;
+  body.defaultSchema = schema || null;
+  body.description = desc || '';
+  const r = await api('/api/connections/' + name, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
   if (r.error) { alert('Error: ' + r.error); return; }
   closeModal();
   loadConnections();
