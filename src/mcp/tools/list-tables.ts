@@ -10,7 +10,7 @@ import type {
   ToolHandlerContext,
 } from "../middleware/audit.js";
 import { listTables } from "../../core/mysql.js";
-import { XizhaoError } from "../../shared/errors.js";
+import { XmSqlMcpError } from "../../shared/errors.js";
 import { success } from "../response.js";
 
 export function createListTablesHandler() {
@@ -22,7 +22,7 @@ export function createListTablesHandler() {
     const schema = args.schema as string | undefined;
 
     if (!connectionName) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         "Missing 'connection' argument",
       );
@@ -30,7 +30,7 @@ export function createListTablesHandler() {
 
     const conn = handlerCtx.conn;
     if (!conn) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         `Connection "${connectionName}" not found`,
       );

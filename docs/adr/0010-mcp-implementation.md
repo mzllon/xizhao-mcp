@@ -18,7 +18,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new Server(
-  { name: "xizhao", version: "0.1.0" },
+  { name: "xm-sql-mcp", version: "0.1.0" },
   { capabilities: { tools: {} } },
 );
 ```
@@ -197,8 +197,8 @@ export const requestContext = new AsyncLocalStorage<RequestContext>();
 ### Stdio 通信注意点
 
 - **stdout 必须纯净**：MCP 用 stdout 传 JSON-RPC，**不能有任何 console.log 输出污染**。
-- **所有日志走 stderr**：用 pino，输出到 stderr。`~/.xizhao/logs/xizhao.log` 文件同步写。
-- **stdin 不读用户输入**：`xizhao client` 启动后 stdin 完全归 MCP 协议使用，不允许任何 inquirer 交互（inquirer 仅在 `xizhao setup` 等非 Stdio 命令中使用）。
+- **所有日志走 stderr**：用 pino，输出到 stderr。`~/.xm-sql-mcp/logs/xm-sql-mcp.log` 文件同步写。
+- **stdin 不读用户输入**：`xm-sql-mcp client` 启动后 stdin 完全归 MCP 协议使用，不允许任何 inquirer 交互（inquirer 仅在 `xm-sql-mcp setup` 等非 Stdio 命令中使用）。
 
 ## Consequences
 

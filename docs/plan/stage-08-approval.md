@@ -24,37 +24,41 @@
 ### 8.1 approval_tasks 表操作
 
 - [ ] `src/core/approval.ts`：
+
   ```ts
   // 创建审批任务
   export function createApprovalTask(input: {
     sql: string;
-    sqlHash: string;            // sha256(sql),用于 approved-task-override 匹配
+    sqlHash: string; // sha256(sql),用于 approved-task-override 匹配
     connectionName: string;
     statementType: string;
     triggerRule: string;
     triggerReason: string;
-  }): ApprovalTask
-  
+  }): ApprovalTask;
+
   // 查 pending task by id
-  export function getTask(id: string): ApprovalTask | null
-  
+  export function getTask(id: string): ApprovalTask | null;
+
   // 列 pending tasks（Dashboard 用）
-  export function listPendingTasks(): ApprovalTask[]
-  
+  export function listPendingTasks(): ApprovalTask[];
+
   // 列近期历史（Dashboard 用,30 天内）
-  export function listRecentTasks(limit: number): ApprovalTask[]
-  
+  export function listRecentTasks(limit: number): ApprovalTask[];
+
   // 审批通过（可带 modified_sql）
-  export function approveTask(id: string, opts: { modifiedSql?: string; note?: string }): void
-  
+  export function approveTask(
+    id: string,
+    opts: { modifiedSql?: string; note?: string },
+  ): void;
+
   // 审批拒绝
-  export function denyTask(id: string, opts: { note?: string }): void
-  
+  export function denyTask(id: string, opts: { note?: string }): void;
+
   // 标记 consumed（执行后调用,防止重放）
-  export function consumeTask(id: string): void
-  
+  export function consumeTask(id: string): void;
+
   // 标记过期（后台 job）
-  export function expireOverdueTasks(now: Date): number
+  export function expireOverdueTasks(now: Date): number;
   ```
 
 ### 8.2 状态机
@@ -77,10 +81,11 @@
 ### 8.3 触发流程
 
 - [ ] 修改 `src/mcp/tools/execute-sql.ts`：
+
   ```ts
   const decision = evaluate(sql, ctx);
-  
-  if (decision.kind === 'need_approval') {
+
+  if (decision.kind === "need_approval") {
     const sqlHash = sha256(sql);
     const task = createApprovalTask({
       sql,
@@ -90,8 +95,9 @@
       triggerRule: decision.rule,
       triggerReason: decision.reason,
     });
-    
-    return error('NEED_APPROVAL',
+
+    return error(
+      "NEED_APPROVAL",
       `This SQL requires approval. Task ID: ${task.id}`,
       auditId,
       {
@@ -100,11 +106,11 @@
         triggerReason: decision.reason,
         approvalUrl: `http://localhost:9020/approve/${task.id}`,
         expiresAt: task.expiresAt,
-      }
+      },
     );
   }
-  
-  if (decision.kind === 'allow') {
+
+  if (decision.kind === "allow") {
     const sqlToExecute = decision.modifiedSql ?? sql;
     const result = await executeSql(conn, sqlToExecute);
     // 如果是 approved task 重放,标记 consumed
@@ -118,8 +124,8 @@
 - [ ] 补完 stage 04 留的骨架：
   ```ts
   export const approvedTaskOverride: PolicyRule = {
-    name: 'approved-task-override',
-    description: 'If this exact SQL has a recent approved task, allow it.',
+    name: "approved-task-override",
+    description: "If this exact SQL has a recent approved task, allow it.",
     builtIn: true,
     required: true,
     evaluate(ast, ctx) {
@@ -127,16 +133,16 @@
         `SELECT id, modified_sql FROM approval_tasks
          WHERE sql_hash = ? AND connection_name = ? AND status = 'approved'
          AND decided_at > datetime('now', '-1 hour')`,
-        [ctx.sqlHash, ctx.connection.name]
+        [ctx.sqlHash, ctx.connection.name],
       );
-      
+
       if (task) {
         // 立即标记 consumed,防止重放（同事务）
         db.execute(
           `UPDATE approval_tasks SET status = 'consumed' WHERE id = ?`,
-          [task.id]
+          [task.id],
         );
-        
+
         return {
           kind: DecisionKind.Allow,
           modifiedSql: task.modified_sql ?? undefined,
@@ -150,44 +156,51 @@
 ### 8.5 check_task_status 工具
 
 - [ ] `src/mcp/tools/check-task-status.ts`：
+
   ```ts
   const CheckTaskStatusSchema = z.object({
-    taskId: z.string().describe('Approval task ID returned from execute_sql'),
+    taskId: z.string().describe("Approval task ID returned from execute_sql"),
   });
-  
+
   export const checkTaskStatusTool = {
-    name: 'check_task_status',
-    description: 'Check the approval status of a previously submitted SQL.',
+    name: "check_task_status",
+    description: "Check the approval status of a previously submitted SQL.",
     inputSchema: zodToJsonSchema(CheckTaskStatusSchema),
-    handler: withAudit('check_task_status', async (args) => {
+    handler: withAudit("check_task_status", async (args) => {
       const { taskId } = CheckTaskStatusSchema.parse(args);
       const task = getTask(taskId);
-      if (!task) return error('TASK_NOT_FOUND', '...', auditId);
-      
-      return success({
-        status: task.status,        // pending / approved / denied / expired / consumed
-        sql: task.sql,
-        modifiedSql: task.modified_sql,
-        triggerRule: task.trigger_rule,
-        expiresAt: task.expires_at,
-        decidedAt: task.decided_at,
-        decisionNote: task.decision_note,
-      }, auditId);
+      if (!task) return error("TASK_NOT_FOUND", "...", auditId);
+
+      return success(
+        {
+          status: task.status, // pending / approved / denied / expired / consumed
+          sql: task.sql,
+          modifiedSql: task.modified_sql,
+          triggerRule: task.trigger_rule,
+          expiresAt: task.expires_at,
+          decidedAt: task.decided_at,
+          decisionNote: task.decision_note,
+        },
+        auditId,
+      );
     }),
   };
   ```
 
 ### 8.6 后台过期 job
 
-- [ ] 在 `xizhao client` 启动时启动一个 setInterval：
+- [ ] 在 `xm-sql-mcp client` 启动时启动一个 setInterval：
   ```ts
   // 每小时跑一次
-  setInterval(() => {
-    const count = expireOverdueTasks(new Date());
-    if (count > 0) {
-      logger.info({ count }, 'Expired overdue approval tasks');
-    }
-  }, 60 * 60 * 1000);
+  setInterval(
+    () => {
+      const count = expireOverdueTasks(new Date());
+      if (count > 0) {
+        logger.info({ count }, "Expired overdue approval tasks");
+      }
+    },
+    60 * 60 * 1000,
+  );
   ```
 - [ ] 也加到 Dashboard 进程（两个进程都会跑，幂等）
 
@@ -233,6 +246,7 @@ pnpm test:coverage -- src/core/approval.ts src/core/policy/rules/approved-task-o
 ```
 
 预期：
+
 - 所有测试通过
 - `src/core/approval.ts` 覆盖率 ≥ 90%
 - 完整流程：DDL 触发审批 → 批准 → retry → 执行 → consumed
@@ -268,9 +282,9 @@ pnpm test:coverage -- src/core/approval.ts src/core/policy/rules/approved-task-o
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| 两个进程同时 consume 同一 task | SQLite 事务 + `status = 'approved'` 条件更新保证原子性 |
-| 后台 job 在两个进程同时跑 | 幂等（UPDATE WHERE status='pending' AND expires_at < ?），不冲突 |
+| 风险                             | 应对                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| 两个进程同时 consume 同一 task   | SQLite 事务 + `status = 'approved'` 条件更新保证原子性                                     |
+| 后台 job 在两个进程同时跑        | 幂等（UPDATE WHERE status='pending' AND expires_at < ?），不冲突                           |
 | AI 收到 NEED_APPROVAL 后无限重试 | Dashboard 在审批期间显示"AI 正在等待"；AI 应该收到 check_task_status 的 expired 状态后放弃 |
-| modified_sql 被审批人改坏 | 审批时显示 EXPLAIN 警告；最终执行失败由 MySQL 错误反馈 |
+| modified_sql 被审批人改坏        | 审批时显示 EXPLAIN 警告；最终执行失败由 MySQL 错误反馈                                     |

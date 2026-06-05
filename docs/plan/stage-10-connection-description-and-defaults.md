@@ -75,9 +75,9 @@
       async (opts: { defaultConnection?: string; defaultSchema?: string }) => {
         // CLI 参数 > 环境变量
         const defaultConnection =
-          opts.defaultConnection ?? process.env.XIZHAO_DEFAULT_CONNECTION;
+          opts.defaultConnection ?? process.env.XM_SQL_MCP_DEFAULT_CONNECTION;
         const defaultSchema =
-          opts.defaultSchema ?? process.env.XIZHAO_DEFAULT_SCHEMA;
+          opts.defaultSchema ?? process.env.XM_SQL_MCP_DEFAULT_SCHEMA;
 
         // ...existing code...
         const mcp = createMcpServer({
@@ -90,7 +90,7 @@
     );
   ```
 
-- [ ] 等价环境变量：`XIZHAO_DEFAULT_CONNECTION`、`XIZHAO_DEFAULT_SCHEMA`
+- [ ] 等价环境变量：`XM_SQL_MCP_DEFAULT_CONNECTION`、`XM_SQL_MCP_DEFAULT_SCHEMA`
 - [ ] 启动日志打印默认值（如果有）：`logger.info({ defaultConnection, defaultSchema }, "Project defaults loaded")`
 
 ### 10.3 MCP Server：默认值注入
@@ -198,16 +198,16 @@ pnpm build
 
 ```bash
 # 1. 创建带 description 的连接
-xizhao setup   # 应出现"连接描述"输入步骤
+xm-sql-mcp setup   # 应出现"连接描述"输入步骤
 
 # 2. 查看 description
-xizhao conn list   # 应显示描述
+xm-sql-mcp conn list   # 应显示描述
 
 # 3. CLI 参数传递默认值
-xizhao client --default-connection mydev --default-schema app_a
+xm-sql-mcp client --default-connection mydev --default-schema app_a
 # list_connections 应返回 { defaultConnection: "mydev", defaultSchema: "app_a", connections: [...] }
 
 # 4. Dashboard 展示
-xizhao dashboard
+xm-sql-mcp dashboard
 # 连接列表应有"描述"列
 ```

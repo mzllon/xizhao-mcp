@@ -9,8 +9,8 @@ import { setupCommand } from "./commands/setup.js";
 
 const program = new Command();
 program
-  .name("xizhao")
-  .description("犀照 - AI ↔ MySQL 安全代理")
+  .name("xm-sql-mcp")
+  .description("XM - AI ↔ MySQL 安全代理")
   .version("0.0.1")
   .option("--verbose", "启用 debug 日志");
 

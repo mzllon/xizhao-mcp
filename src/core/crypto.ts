@@ -11,14 +11,14 @@ const ALGORITHM = "aes-256-gcm";
 /**
  * Load or create the master key file.
  *
- * - Default path: ~/.xizhao/master.key
- * - Override with XIZHAO_MASTER_KEY_FILE env var
+ * - Default path: ~/.xm-sql-mcp/master.key
+ * - Override with XM_SQL_MCP_MASTER_KEY_FILE env var
  * - Creates 32-byte random key if file doesn't exist
  * - Validates existing key length
  */
 export function loadOrCreateMasterKey(appDir?: string): Buffer {
   const paths = getPaths(appDir);
-  const keyPath = process.env.XIZHAO_MASTER_KEY_FILE ?? paths.masterKey;
+  const keyPath = process.env.XM_SQL_MCP_MASTER_KEY_FILE ?? paths.masterKey;
 
   if (fs.existsSync(keyPath)) {
     const key = fs.readFileSync(keyPath);
@@ -88,7 +88,7 @@ export function encryptSecret(plaintext: string, masterKey: Buffer): string {
  * Decrypt a secret previously encrypted with encryptSecret.
  *
  * Input: base64(iv || authTag || ciphertext)
- * Throws XizhaoError on any decryption failure (wrong key, tampered data, etc.)
+ * Throws XmSqlMcpError on any decryption failure (wrong key, tampered data, etc.)
  */
 export function decryptSecret(payload: string, masterKey: Buffer): string {
   let combined: Buffer;

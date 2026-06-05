@@ -25,8 +25,8 @@ const cleanupQueue: string[] = [];
 
 afterEach(() => {
   resetLogger();
-  delete process.env.XIZHAO_LOG_LEVEL;
-  delete process.env.XIZHAO_LOG_SQL;
+  delete process.env.XM_SQL_MCP_LOG_LEVEL;
+  delete process.env.XM_SQL_MCP_LOG_SQL;
   for (const dir of cleanupQueue) {
     try {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 function createTmpDir(): string {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-log-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-log-"));
   cleanupQueue.push(tmpDir);
   return tmpDir;
 }
@@ -197,15 +197,15 @@ describe("createLogger (production path)", () => {
     expect(logger.level).toBe("debug");
   });
 
-  it("resolves XIZHAO_LOG_LEVEL env var", () => {
-    process.env.XIZHAO_LOG_LEVEL = "trace";
+  it("resolves XM_SQL_MCP_LOG_LEVEL env var", () => {
+    process.env.XM_SQL_MCP_LOG_LEVEL = "trace";
     const tmpDir = createTmpDir();
     const logger = createLogger({ appDir: tmpDir });
     expect(logger.level).toBe("trace");
   });
 
-  it("ignores invalid XIZHAO_LOG_LEVEL and falls back to info", () => {
-    process.env.XIZHAO_LOG_LEVEL = "invalid";
+  it("ignores invalid XM_SQL_MCP_LOG_LEVEL and falls back to info", () => {
+    process.env.XM_SQL_MCP_LOG_LEVEL = "invalid";
     const tmpDir = createTmpDir();
     const logger = createLogger({ appDir: tmpDir });
     expect(logger.level).toBe("info");
@@ -218,7 +218,7 @@ describe("createLogger (production path)", () => {
   });
 
   it("xIZHAO_LOG_LEVEL takes precedence over verbose", () => {
-    process.env.XIZHAO_LOG_LEVEL = "error";
+    process.env.XM_SQL_MCP_LOG_LEVEL = "error";
     const tmpDir = createTmpDir();
     const logger = createLogger({ appDir: tmpDir, verbose: true });
     // env var wins
@@ -254,17 +254,17 @@ describe("createLogger (production path)", () => {
 
 describe("shouldLogSql", () => {
   it("returns true by default", () => {
-    delete process.env.XIZHAO_LOG_SQL;
+    delete process.env.XM_SQL_MCP_LOG_SQL;
     expect(shouldLogSql()).toBe(true);
   });
 
-  it("returns false when XIZHAO_LOG_SQL=off", () => {
-    process.env.XIZHAO_LOG_SQL = "off";
+  it("returns false when XM_SQL_MCP_LOG_SQL=off", () => {
+    process.env.XM_SQL_MCP_LOG_SQL = "off";
     expect(shouldLogSql()).toBe(false);
   });
 
   it("returns true for any other value", () => {
-    process.env.XIZHAO_LOG_SQL = "on";
+    process.env.XM_SQL_MCP_LOG_SQL = "on";
     expect(shouldLogSql()).toBe(true);
   });
 });

@@ -64,7 +64,7 @@
 
   export function createMcpServer() {
     const server = new Server(
-      { name: "xizhao", version: VERSION },
+      { name: "xm-sql-mcp", version: VERSION },
       { capabilities: { tools: {} } },
     );
 
@@ -156,7 +156,7 @@
           await entry.flush(); // fail-on-audit-failure
         } catch (auditErr) {
           // 审计写失败:抛 INTERNAL_ERROR,不返回业务结果
-          throw new XizhaoError("AUDIT_WRITE_FAILED");
+          throw new XmSqlMcpError("AUDIT_WRITE_FAILED");
         }
       }
     };

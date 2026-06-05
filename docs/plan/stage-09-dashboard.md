@@ -7,9 +7,9 @@
 
 ## 目标
 
-把 Xizhao 从"命令行工具"升级为"可视化产品"。Dashboard 是作品集 README 头图的来源，也是 self-approval 工作流的必经环节。
+把 XM-SQL-MCP 从"命令行工具"升级为"可视化产品"。Dashboard 是作品集 README 头图的来源，也是 self-approval 工作流的必经环节。
 
-**关键挑战：与 `xizhao client` 进程并发访问同一 SQLite**——本阶段必须把 stage 02 的 WAL 配置用到极致。
+**关键挑战：与 `xm-sql-mcp client` 进程并发访问同一 SQLite**——本阶段必须把 stage 02 的 WAL 配置用到极致。
 
 ## 文件清单
 
@@ -41,27 +41,28 @@
 ### 9.1 后端：Hono 服务
 
 - [ ] `src/web/server.ts`：
+
   ```ts
-  import { Hono } from 'hono';
-  import { serve } from '@hono/node-server';
-  import { authMiddleware } from './auth.js';
-  import connectionsApi from './api/connections.js';
+  import { Hono } from "hono";
+  import { serve } from "@hono/node-server";
+  import { authMiddleware } from "./auth.js";
+  import connectionsApi from "./api/connections.js";
   // ... 其他 API
-  
+
   const app = new Hono();
-  
+
   // 静态文件 (Next.js 导出产物)
-  app.use('/*', serveStatic({ root: './dist-web' }));
-  
+  app.use("/*", serveStatic({ root: "./dist-web" }));
+
   // API 路由
-  app.route('/api', authMiddleware);
-  app.route('/api/connections', connectionsApi);
-  app.route('/api/policy', policyApi);
-  app.route('/api/audit', auditApi);
-  app.route('/api/approvals', approvalsApi);
-  app.route('/api/settings', settingsApi);
-  app.route('/api/dashboard', dashboardApi);
-  
+  app.route("/api", authMiddleware);
+  app.route("/api/connections", connectionsApi);
+  app.route("/api/policy", policyApi);
+  app.route("/api/audit", auditApi);
+  app.route("/api/approvals", approvalsApi);
+  app.route("/api/settings", settingsApi);
+  app.route("/api/dashboard", dashboardApi);
+
   export function startDashboardServer(opts: { port: number; token: string }) {
     serve({ fetch: app.fetch, port: opts.port });
   }
@@ -70,9 +71,9 @@
 ### 9.2 Token 认证
 
 - [ ] `src/web/auth.ts`：
-  - 启动时从 `~/.xizhao/dashboard.token` 读 token（CLI 启动时写入）
+  - 启动时从 `~/.xm-sql-mcp/dashboard.token` 读 token（CLI 启动时写入）
   - 第一次访问必须带 `?token=xxx`
-  - 验证通过 → 设置 cookie `xizhao_session` (HttpOnly + SameSite=Strict + 仅 HTTPS 时 Secure)
+  - 验证通过 → 设置 cookie `xm_sql_mcp_session` (HttpOnly + SameSite=Strict + 仅 HTTPS 时 Secure)
   - 后续访问：cookie 有效即放行
   - 无 cookie 且无 token 参数 → 返回 HTML 页面要求输入 token
 - [ ] **cookie 值**：用 `crypto.randomBytes(32).toString('base64url')`
@@ -81,6 +82,7 @@
 ### 9.3 端口递增
 
 - [ ] 启动逻辑：
+
   ```ts
   async function findPort(start: number, end: number): Promise<number> {
     for (let port = start; port <= end; port++) {
@@ -88,9 +90,10 @@
     }
     throw new Error(`No available port in ${start}-${end}`);
   }
-  
+
   const port = await findPort(9020, 9025);
   ```
+
 - [ ] 全部占用 → 报错并提示用户手动指定 `--port`
 
 ### 9.4 API 路由
@@ -100,7 +103,9 @@
   {
     "connectionsCount": 3,
     "pendingApprovals": 2,
-    "auditStats": { "last24h": { "total": 145, "denied": 3, "needApproval": 2 } },
+    "auditStats": {
+      "last24h": { "total": 145, "denied": 3, "needApproval": 2 }
+    },
     "masterKey": { "fingerprint": "abc12345", "lastModified": "..." }
   }
   ```
@@ -117,12 +122,12 @@
 
 ### 9.5 与 Client 进程的并发协调
 
-**核心问题**：用户在 AI 会话中调 `xizhao client`（进程 A），同时打开 Dashboard（进程 B）。两边都访问 `~/.xizhao/config.db`。
+**核心问题**：用户在 AI 会话中调 `xm-sql-mcp client`（进程 A），同时打开 Dashboard（进程 B）。两边都访问 `~/.xm-sql-mcp/config.db`。
 
 - [ ] **基础**：stage 02 已配置 WAL + busy_timeout=5000，理论上支持并发
 - [ ] **配置热更新**（关键）：
   - 用户在 Dashboard 改了连接配置 → Client 必须感知
-  - 方案：Dashboard 进程写 SQLite 后，向 `~/.xizhao/reload.signal` 文件写时间戳
+  - 方案：Dashboard 进程写 SQLite 后，向 `~/.xm-sql-mcp/reload.signal` 文件写时间戳
   - Client 进程用 `fs.watch()` 监听该文件，变化时清缓存（重读 connections 表）
   - 或者更简单：Client 进程每次工具调用都**重新查询**连接（不缓存），代价是每次多一次 SQLite 读
   - **推荐方案**：每次重新查询（dev/test 场景无性能压力）
@@ -135,7 +140,7 @@
   - Dashboard 前端用 polling（每 5 秒）刷新 pending 列表
 - [ ] **migration 协调**：
   - 哪个进程先启动就跑 schema migration？
-  - 方案：用 `~/.xizhao/.migration-lock` 文件锁
+  - 方案：用 `~/.xm-sql-mcp/.migration-lock` 文件锁
   - 进程启动时尝试 `flock`（-exclusive）拿锁，拿到就跑 migration
   - 拿不到就等待最多 5 秒，然后跳过 migration 假设 schema 已就绪
 
@@ -164,34 +169,35 @@
 ### 9.7 命令实现
 
 - [ ] `src/cli/commands/dashboard.ts`：
+
   ```ts
-  import { getPaths } from '../../core/app-paths.js';
-  import { startDashboardServer } from '../../web/server.js';
-  import { randomBytes } from 'node:crypto';
-  import { writeFileSync, unlinkSync } from 'node:fs';
-  import open from 'open';
-  
+  import { getPaths } from "../../core/app-paths.js";
+  import { startDashboardServer } from "../../web/server.js";
+  import { randomBytes } from "node:crypto";
+  import { writeFileSync, unlinkSync } from "node:fs";
+  import open from "open";
+
   export async function dashboardCommand(opts: { port?: number }) {
     const paths = getPaths();
-    
+
     // 1. 生成 token
-    const token = randomBytes(32).toString('base64url');
+    const token = randomBytes(32).toString("base64url");
     writeFileSync(paths.dashboardToken, token, { mode: 0o600 });
-    
+
     // 2. 找可用端口
-    const port = opts.port ?? await findPort(9020, 9025);
-    
+    const port = opts.port ?? (await findPort(9020, 9025));
+
     // 3. 启动 server
     startDashboardServer({ port, token });
-    
+
     // 4. 自动开浏览器
     const url = `http://localhost:${port}/?token=${token}`;
     console.log(`🚀 Dashboard: ${url}`);
     await open(url);
-    
+
     // 5. 注册退出清理
-    process.on('exit', () => unlinkSync(paths.dashboardToken));
-    process.on('SIGINT', () => process.exit(0));
+    process.on("exit", () => unlinkSync(paths.dashboardToken));
+    process.on("SIGINT", () => process.exit(0));
   }
   ```
 
@@ -227,10 +233,11 @@ node dist/cli/index.js dashboard --port 9020
 ```
 
 预期：
+
 - 所有测试通过
 - token 鉴权生效
 - 审批页面能 approve / deny / modify-approve
-- 与 `xizhao client` 同时跑时无 SQLite 锁错误
+- 与 `xm-sql-mcp client` 同时跑时无 SQLite 锁错误
 - Dashboard 改连接配置 → Client 下次工具调用看到新配置
 
 ## 关键技术点
@@ -262,10 +269,10 @@ node dist/cli/index.js dashboard --port 9020
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| Windows 上 `fs.watch` 不稳定 | 改用方案 A（每次重查 SQLite），不依赖 fs.watch |
-| Next.js 14 App Router 仍在 beta | 锁定 14.x 稳定版本，不追最新 |
-| shadcn/ui 组件冲突 Tailwind 配置 | 用 shadcn 默认配置，不深度定制 |
-| Dashboard 启动时 Client 也在跑 | 测试覆盖，确保两进程不互锁 |
-| 浏览器自动开在 SSH 远程会话失败 | 检测 DISPLAY 环境，无则只打印 URL |
+| 风险                             | 应对                                           |
+| -------------------------------- | ---------------------------------------------- |
+| Windows 上 `fs.watch` 不稳定     | 改用方案 A（每次重查 SQLite），不依赖 fs.watch |
+| Next.js 14 App Router 仍在 beta  | 锁定 14.x 稳定版本，不追最新                   |
+| shadcn/ui 组件冲突 Tailwind 配置 | 用 shadcn 默认配置，不深度定制                 |
+| Dashboard 启动时 Client 也在跑   | 测试覆盖，确保两进程不互锁                     |
+| 浏览器自动开在 SSH 远程会话失败  | 检测 DISPLAY 环境，无则只打印 URL              |

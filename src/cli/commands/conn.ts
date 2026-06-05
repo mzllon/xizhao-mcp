@@ -21,7 +21,7 @@ export const connCommand = new Command("conn")
         const conns = listConnections(raw);
         if (conns.length === 0) {
           console.log(
-            chalk.yellow("暂无连接，运行 xizhao setup 创建第一个连接"),
+            chalk.yellow("暂无连接，运行 xm-sql-mcp setup 创建第一个连接"),
           );
           return;
         }

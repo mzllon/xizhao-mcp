@@ -18,7 +18,9 @@ afterEach(() => {
 });
 
 function setup() {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-migration-"));
+  const tmpDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), "xm-sql-mcp-migration-"),
+  );
   cleanupQueue.push(tmpDir);
   return tmpDir;
 }

@@ -1,5 +1,5 @@
 {
-  "name": "xizhao-mcp",
+  "name": "xm-sql-mcp",
   "type": "module",
   "version": "0.0.1",
   "packageManager": "pnpm@10.32.1",
@@ -8,11 +8,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mzllon/xizhao-mcp.git"
+    "url": "git+https://github.com/mzllon/xm-sql-mcp.git"
   },
-  "homepage": "https://github.com/mzllon/xizhao-mcp#readme",
+  "homepage": "https://github.com/mzllon/xm-sql-mcp#readme",
   "bugs": {
-    "url": "https://github.com/mzllon/xizhao-mcp/issues"
+    "url": "https://github.com/mzllon/xm-sql-mcp/issues"
   },
   "keywords": [
     "mcp",
@@ -22,7 +22,7 @@
     "audit"
   ],
   "bin": {
-    "xizhao": "./dist/cli/index.js"
+    "xm-sql-mcp": "./dist/cli/index.js"
   },
   "engines": {
     "node": ">=20"

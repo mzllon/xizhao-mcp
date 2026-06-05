@@ -214,8 +214,8 @@ describe("withAudit middleware", () => {
 
     const handler = withAudit("test_tool", async (_args, ctx) => {
       if (!ctx.conn) {
-        const { XizhaoError } = await import("../../src/shared/errors.js");
-        throw new XizhaoError("CONNECTION_NOT_FOUND", "Connection not found");
+        const { XmSqlMcpError } = await import("../../src/shared/errors.js");
+        throw new XmSqlMcpError("CONNECTION_NOT_FOUND", "Connection not found");
       }
       return success({ ok: true }, ctx.auditId);
     });

@@ -1,8 +1,8 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 /**
- * `xizhao client` — start the MCP Stdio server.
+ * `xm-sql-mcp client` — start the MCP Stdio server.
  *
- * Starts the Xizhao MCP server on stdio transport:
+ * Starts the XM-SQL-MCP MCP server on stdio transport:
  *   - stdin  → JSON-RPC requests from MCP client
  *   - stdout → JSON-RPC responses (strictly pure, no other output)
  *   - stderr → pino structured logs
@@ -83,11 +83,11 @@ export const clientCommand = new Command("client")
 
       // Resolve project defaults: CLI args > env vars
       const defaultConnection =
-        opts.defaultConnection ?? process.env.XIZHAO_DEFAULT_CONNECTION;
+        opts.defaultConnection ?? process.env.XM_SQL_MCP_DEFAULT_CONNECTION;
       const defaultSchema =
-        opts.defaultSchema ?? process.env.XIZHAO_DEFAULT_SCHEMA;
+        opts.defaultSchema ?? process.env.XM_SQL_MCP_DEFAULT_SCHEMA;
 
-      logger.info("Starting Xizhao MCP server...");
+      logger.info("Starting XM-SQL-MCP MCP server...");
       if (defaultConnection || defaultSchema) {
         logger.info(
           { defaultConnection, defaultSchema },
@@ -115,7 +115,7 @@ export const clientCommand = new Command("client")
       const transport = new StdioServerTransport();
       await mcp.connect(transport);
 
-      logger.info("Xizhao MCP server connected on stdio");
+      logger.info("XM-SQL-MCP MCP server connected on stdio");
 
       // Start approval task expiry job — runs every hour
       const expiryTimer = setInterval(

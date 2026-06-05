@@ -20,11 +20,12 @@
 ### 6.1 连接池
 
 - [ ] `src/core/mysql.ts`：
+
   ```ts
-  import mysql from 'mysql2/promise';
-  
-  const pools = new Map<string, mysql.Pool>();   // connectionName → pool
-  
+  import mysql from "mysql2/promise";
+
+  const pools = new Map<string, mysql.Pool>(); // connectionName → pool
+
   export function getPool(conn: Connection): mysql.Pool {
     if (pools.has(conn.name)) return pools.get(conn.name)!;
     const pool = mysql.createPool({
@@ -38,20 +39,20 @@
       waitForConnections: true,
       connectTimeout: 10_000,
       enableKeepAlive: true,
-      timezone: 'Z',         // UTC,统一在应用层处理时区
+      timezone: "Z", // UTC,统一在应用层处理时区
       dateStrings: false,
       typeCast: function (field, next) {
         // BIGINT 默认返回字符串,避免 JS 精度
-        if (field.type === 'BIGINT') return String(field.string());
+        if (field.type === "BIGINT") return String(field.string());
         return next();
       },
     });
     pools.set(conn.name, pool);
     return pool;
   }
-  
+
   export async function closeAllPools(): Promise<void> {
-    await Promise.all([...pools.values()].map(p => p.end()));
+    await Promise.all([...pools.values()].map((p) => p.end()));
     pools.clear();
   }
   ```
@@ -61,9 +62,15 @@
 - [ ] 实现 `executeSql(conn, sql, options): Promise<SqlResult>`：
   ```ts
   type SqlResult =
-    | { kind: 'select'; columns: string[]; rows: Record<string, unknown>[]; rowCount: number; truncated: boolean }
-    | { kind: 'modify'; affectedRows: number }
-    | { kind: 'ddl'; durationMs: number };
+    | {
+        kind: "select";
+        columns: string[];
+        rows: Record<string, unknown>[];
+        rowCount: number;
+        truncated: boolean;
+      }
+    | { kind: "modify"; affectedRows: number }
+    | { kind: "ddl"; durationMs: number };
   ```
 - [ ] **5 秒查询超时**（关键）：
   - 用 `MAX_EXECUTION_TIME(5000)` hint（仅 SELECT）
@@ -72,7 +79,7 @@
     ```
   - 用 mysql2 的 `timeout: 5000` 选项（DML / DDL 用）
   - 超时后用 `KILL QUERY <thread_id>` 清理（防止 MySQL 继续跑）
-  - 抛 `XizhaoError('TIMEOUT')`
+  - 抛 `XmSqlMcpError('TIMEOUT')`
 - [ ] **结果截断**：
   - 默认 maxLimit 来自连接的 policy.maxLimit（通常 1000）
   - 如果 SELECT 不带 LIMIT 或 LIMIT > maxLimit → 策略引擎已经拦下，不会到这一层
@@ -137,6 +144,7 @@ pnpm test:integration tests/integration/mysql.test.ts tests/integration/execute-
 ```
 
 预期：
+
 - 所有测试通过（需要 Docker）
 - 真实 MySQL 8 下：
   - SELECT 1000 行返回 + truncated: true
@@ -168,14 +176,14 @@ pnpm test:integration tests/integration/mysql.test.ts tests/integration/execute-
 ### connection pool 共享
 
 - 同一 Connection 名共享 pool
-- 删除连接时（`xizhao conn delete`）需要先 `closePool`
+- 删除连接时（`xm-sql-mcp conn delete`）需要先 `closePool`
 - 否则连接池保持旧凭证
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| testcontainers 在 Windows / macOS ARM 上启动慢 | CI 用 Linux；本地慢点接受 |
-| MySQL 8.4 / 9.x 语法变化 | 测试矩阵扩展版本（v2），v1 锁 8.0 / 8.4 |
-| KILL QUERY 权限不足 | 最小权限 SQL 文档说明需要 PROCESS |
-| `SHOW CREATE TABLE` 输出格式跨版本差异 | mysql2 解析后取 DDL 列，应该稳定 |
+| 风险                                           | 应对                                    |
+| ---------------------------------------------- | --------------------------------------- |
+| testcontainers 在 Windows / macOS ARM 上启动慢 | CI 用 Linux；本地慢点接受               |
+| MySQL 8.4 / 9.x 语法变化                       | 测试矩阵扩展版本（v2），v1 锁 8.0 / 8.4 |
+| KILL QUERY 权限不足                            | 最小权限 SQL 文档说明需要 PROCESS       |
+| `SHOW CREATE TABLE` 输出格式跨版本差异         | mysql2 解析后取 DDL 列，应该稳定        |

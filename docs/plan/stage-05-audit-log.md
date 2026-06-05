@@ -53,7 +53,7 @@
 
 ### 5.3 Fail-on-audit-failure
 
-- [ ] `appendAuditLog` 失败 → 抛 `XizhaoError('AUDIT_WRITE_FAILED')`
+- [ ] `appendAuditLog` 失败 → 抛 `XmSqlMcpError('AUDIT_WRITE_FAILED')`
 - [ ] 上层 MCP middleware 捕获后返回 `INTERNAL_ERROR`
 - [ ] **绝不**返回 SQL 执行结果而审计写入失败
 
@@ -62,7 +62,7 @@
 - [ ] `src/core/logger.ts` 用 pino + pino-roll + multistream：
   - 双输出：file（rotation daily + 10MB + 100MB 总）+ stderr
   - 内置 redact（路径来自 `shared/redact.ts`）
-  - 默认 level `info`，`--verbose` 或 `XIZHAO_LOG_LEVEL=debug` 启用 debug
+  - 默认 level `info`，`--verbose` 或 `XM_SQL_MCP_LOG_LEVEL=debug` 启用 debug
   - 自动注入 `auditId` / `clientInfo`（从 AsyncLocalStorage 取）
 
 ### 5.5 Redact 路径
@@ -70,12 +70,21 @@
 - [ ] `src/shared/redact.ts`：
   ```ts
   export const redactPaths = [
-    'password', 'password_enc', '*password*', '*Password*',
-    'apiKey', '*api_key', '*ApiKey',
-    'masterKey', 'master_key',
-    'req.headers.authorization', 'req.headers.Authorization',
-    'sql.params.*',
-    'token', '*_token', '*Token',
+    "password",
+    "password_enc",
+    "*password*",
+    "*Password*",
+    "apiKey",
+    "*api_key",
+    "*ApiKey",
+    "masterKey",
+    "master_key",
+    "req.headers.authorization",
+    "req.headers.Authorization",
+    "sql.params.*",
+    "token",
+    "*_token",
+    "*Token",
   ];
   ```
 
@@ -103,6 +112,7 @@ pnpm test:coverage -- src/core/audit.ts src/core/logger.ts src/shared/redact.ts
 ```
 
 预期：
+
 - 所有测试通过
 - `src/core/audit.ts` 覆盖率 ≥ 90%
 - `src/core/logger.ts` 覆盖率 ≥ 80%
@@ -122,8 +132,8 @@ pnpm test:coverage -- src/core/audit.ts src/core/logger.ts src/shared/redact.ts
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| Hash 链"重写整个日志"攻击 | v1 接受（ADR-0004）；v2 考虑外部 anchor |
-| SQLite 写满磁盘 | Dashboard 概览页显示剩余空间告警 |
+| 风险                            | 应对                                                   |
+| ------------------------------- | ------------------------------------------------------ |
+| Hash 链"重写整个日志"攻击       | v1 接受（ADR-0004）；v2 考虑外部 anchor                |
+| SQLite 写满磁盘                 | Dashboard 概览页显示剩余空间告警                       |
 | AsyncLocalStorage 跨 await 丢失 | 用 `AsyncLocalStorage.bind()` 或所有 await 在 run() 内 |

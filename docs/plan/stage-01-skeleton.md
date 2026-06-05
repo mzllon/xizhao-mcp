@@ -101,7 +101,7 @@
 - [ ] 配置 CI（`.github/workflows/ci.yml`）：
   - matrix Node 20 / 22
   - 步骤：`pnpm install` → `lint` → `typecheck` → `test:unit` → `test:integration`（需要 Docker service）→ `build`
-- [ ] 实现 `src/shared/errors.ts`：定义标准错误类 `XizhaoError` + 错误码枚举（参考 ADR-0010）
+- [ ] 实现 `src/shared/errors.ts`：定义标准错误类 `XmSqlMcpError` + 错误码枚举（参考 ADR-0010）
 - [ ] 实现 `src/shared/ids.ts`：`ulid()` 包装，便于 mock
 - [ ] 实现 `src/shared/time.ts`：`nowIso()` 工具，便于 mock
 - [ ] 创建空目录占位：`src/{cli,core,mcp,web}/`、`tests/{unit,integration,mcp,fixtures/sql}/`、`docs/plan/`（已有）
@@ -134,8 +134,8 @@ ls dist/cli/index.js   # 应该存在
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| `@antfu/eslint-config` 与项目风格冲突 | 阶段一结束时检查 eslint warnings，必要时覆盖个别规则 |
-| better-sqlite3 在某些 Node 版本编译失败 | 锁定 better-sqlite3 ^11，Node 20+ 应该有 prebuilt binary |
-| Husky 在 Windows 上不工作 | 验证 `pnpm exec husky init` 在 Windows 上能创建 `.husky/` |
+| 风险                                    | 应对                                                      |
+| --------------------------------------- | --------------------------------------------------------- |
+| `@antfu/eslint-config` 与项目风格冲突   | 阶段一结束时检查 eslint warnings，必要时覆盖个别规则      |
+| better-sqlite3 在某些 Node 版本编译失败 | 锁定 better-sqlite3 ^11，Node 20+ 应该有 prebuilt binary  |
+| Husky 在 Windows 上不工作               | 验证 `pnpm exec husky init` 在 Windows 上能创建 `.husky/` |

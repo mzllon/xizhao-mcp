@@ -14,7 +14,7 @@ import type { AuditEvent } from "../../core/audit.js";
 import type { Connection } from "../../core/connection.js";
 import type { PolicyDecision } from "../../core/policy/types.js";
 import { appendAuditLog } from "../../core/audit.js";
-import { XizhaoError } from "../../shared/errors.js";
+import { XmSqlMcpError } from "../../shared/errors.js";
 import { generateUlid } from "../../shared/ids.js";
 import { requestContext as ctx } from "../context.js";
 import { error } from "../response.js";
@@ -122,7 +122,7 @@ export function createWithAudit(deps: AuditDeps) {
         event.execStatus = "error";
         event.execDurationMs = Date.now() - startTime;
 
-        if (err instanceof XizhaoError) {
+        if (err instanceof XmSqlMcpError) {
           event.mysqlErrorCode = err.code;
           execResult = error(err.code, err.message, auditId, err.detail);
         } else {
@@ -137,7 +137,7 @@ export function createWithAudit(deps: AuditDeps) {
         const db = deps.getRawDb();
         appendAuditLog(db, event);
       } catch (auditErr: unknown) {
-        throw new XizhaoError(
+        throw new XmSqlMcpError(
           "INTERNAL_ERROR",
           `Audit write failed: ${auditErr instanceof Error ? auditErr.message : String(auditErr)}`,
         );

@@ -1,5 +1,5 @@
 /**
- * MCP Server — creates and configures the Xizhao MCP server.
+ * MCP Server — creates and configures the XM-SQL-MCP MCP server.
  *
  * Uses @modelcontextprotocol/sdk's McpServer high-level API.
  * Registers 6 tools (ADR-0010 + list_connections), each wrapped with withAudit middleware.
@@ -38,14 +38,14 @@ export interface McpServerDeps {
 }
 
 /**
- * Create the Xizhao MCP server with all 6 tools registered.
+ * Create the XM-SQL-MCP MCP server with all 6 tools registered.
  *
  * @param deps - Dependencies for audit and connection resolution
  * @returns Configured McpServer instance (not yet connected to transport)
  */
 export function createMcpServer(deps: McpServerDeps): McpServer {
   const mcp = new McpServer(
-    { name: "xizhao", version: "0.0.1" },
+    { name: "xm-sql-mcp", version: "0.0.1" },
     { capabilities: { tools: {} } },
   );
 
@@ -180,7 +180,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     return {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "xizhao", version: "0.0.1" },
+      serverInfo: { name: "xm-sql-mcp", version: "0.0.1" },
     };
   });
 

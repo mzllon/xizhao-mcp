@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 function setup() {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-conn-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-conn-"));
   cleanupQueue.push(tmpDir);
   const { raw, close } = openStorage(tmpDir);
   const masterKey = crypto.randomBytes(32);

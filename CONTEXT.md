@@ -1,23 +1,23 @@
-# Xizhao (犀照)
+# xm-sql-mcp (XM)
 
 为 AI 代理访问 MySQL 提供安全代理与全量审计的 MCP (Model Context Protocol) 服务器。**v1 第一发布是 Client 模式（开发者本机单用户）**，Server 模式（小团队多用户）作为 v2 紧随其后。仅访问 dev / test 库，不做生产库、不做 SaaS、不做多租户。
 
 ## 命名典故
 
-**"犀照"** 取自南朝刘敬叔《异苑》"犀角烛怪"典故：晋代温峤燃犀牛角，照见水下精怪无所遁形。
+**"XM"** 取自南朝刘敬叔《异苑》"犀角烛怪"典故：晋代温峤燃犀牛角，照见水下精怪无所遁形。
 
-- **寓意**：AI 生成的 SQL 中可能藏着"妖怪"（危险模式、未授权操作、SQL 注入等），犀照用 AST 解析 + 策略引擎把它们一一照出。
+- **寓意**：AI 生成的 SQL 中可能藏着"妖怪"（危险模式、未授权操作、SQL 注入等），XM用 AST 解析 + 策略引擎把它们一一照出。
 - **双关**："犀"既指灵犀（AI 与数据库心灵相通），又指犀角（识别妖物的工具）。"照"即审计、明察。
-- **Slogan**：_犀照 SQL，众妖毕现。_
+- **Slogan**：_XM SQL，众妖毕现。_
 
 CLI 命令、配置目录、API Key 前缀、环境变量前缀：
 
-| 项           | 值                                                            |
-| ------------ | ------------------------------------------------------------- |
-| CLI 命令     | `xizhao`                                                      |
-| 配置目录     | `~/.xizhao/`                                                  |
-| API Key 前缀 | `xz_`（参考 GitHub `ghp_`、Stripe `sk_` 的 3 字符惯例）       |
-| 环境变量前缀 | `XIZHAO_*`（如 `XIZHAO_LOG_LEVEL`、`XIZHAO_MASTER_KEY_FILE`） |
+| 项           | 值                                                                        |
+| ------------ | ------------------------------------------------------------------------- |
+| CLI 命令     | `xm-sql-mcp`                                                              |
+| 配置目录     | `~/.xm-sql-mcp/`                                                          |
+| API Key 前缀 | `xm_`（参考 GitHub `ghp_`、Stripe `sk_` 的 3 字符惯例）                   |
+| 环境变量前缀 | `XM_SQL_MCP_*`（如 `XM_SQL_MCP_LOG_LEVEL`、`XM_SQL_MCP_MASTER_KEY_FILE`） |
 
 ## 部署形态
 
@@ -30,11 +30,11 @@ _Avoid_: 本地模式、单机模式
 _Avoid_: 服务端、企业模式、多用户模式
 
 **自身存储 (Self Storage)**:
-Xizhao 自己用来保存连接配置、审计日志、审批任务等的存储。默认 SQLite 单文件。与"目标数据库"严格区分。
+XM-SQL-MCP 自己用来保存连接配置、审计日志、审批任务等的存储。默认 SQLite 单文件。与"目标数据库"严格区分。
 _Avoid_: 元数据库、配置库、内部库
 
 **目标数据库 (Target Database)**:
-被 Xizhao 代理访问的 MySQL 实例（dev 或 test 库）。一条 SQL 从 MCP 客户端发出，经过 Xizhao，最终在目标数据库上执行。
+被 XM-SQL-MCP 代理访问的 MySQL 实例（dev 或 test 库）。一条 SQL 从 MCP 客户端发出，经过 XM-SQL-MCP，最终在目标数据库上执行。
 _Avoid_: 业务库、源库
 
 ## 核心概念
@@ -64,7 +64,7 @@ _Avoid_: 工单、ticket、approval request
 _Avoid_: 操作日志、query log、slow log
 
 **Dashboard**:
-本地 Web 控制台。`xizhao dashboard` 命令按需启动，默认 `localhost:9020`，Jupyter 风格 token 认证。用于连接配置、策略调整、审计查看、审批处理。
+本地 Web 控制台。`xm-sql-mcp dashboard` 命令按需启动，默认 `localhost:9020`，Jupyter 风格 token 认证。用于连接配置、策略调整、审计查看、审批处理。
 _Avoid_: Web 后台、管理面板、admin panel
 
 **API Key**:
@@ -78,7 +78,7 @@ _Avoid_: token、密钥、access key
 _Avoid_: 触发者、invoker
 
 **MCP 客户端 (MCP Client)**:
-调用 Xizhao 的前端应用，例如 Claude Code、Codex、Cursor。Xizhao 不实现客户端，只实现服务端。
+调用 XM-SQL-MCP 的前端应用，例如 Claude Code、Codex、Cursor。XM-SQL-MCP 不实现客户端，只实现服务端。
 _Avoid_: AI 端、前端、调用端
 
 **管理员 (Admin)** / **用户 (User)**:

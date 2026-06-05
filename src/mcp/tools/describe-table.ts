@@ -9,7 +9,7 @@ import type {
   ToolHandlerContext,
 } from "../middleware/audit.js";
 import { describeTable } from "../../core/mysql.js";
-import { XizhaoError } from "../../shared/errors.js";
+import { XmSqlMcpError } from "../../shared/errors.js";
 import { success } from "../response.js";
 
 export function createDescribeTableHandler() {
@@ -21,18 +21,18 @@ export function createDescribeTableHandler() {
     const table = args.table as string | undefined;
 
     if (!connectionName) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         "Missing 'connection' argument",
       );
     }
     if (!table) {
-      throw new XizhaoError("SQL_PARSE_ERROR", "Missing 'table' argument");
+      throw new XmSqlMcpError("SQL_PARSE_ERROR", "Missing 'table' argument");
     }
 
     const conn = handlerCtx.conn;
     if (!conn) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         `Connection "${connectionName}" not found`,
       );

@@ -201,6 +201,6 @@ describe("mCP Server creation", () => {
     expect(responses.length).toBeGreaterThan(0);
 
     const result = responses[0]!.result as Record<string, unknown>;
-    expect(result.serverInfo).toEqual({ name: "xizhao", version: "0.0.1" });
+    expect(result.serverInfo).toEqual({ name: "xm-sql-mcp", version: "0.0.1" });
   });
 });

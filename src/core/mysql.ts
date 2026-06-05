@@ -1,7 +1,7 @@
 import type { FieldPacket, Pool, RowDataPacket } from "mysql2/promise";
 import type { Connection } from "./connection.js";
 import mysql from "mysql2/promise";
-import { XizhaoError } from "../shared/errors.js";
+import { XmSqlMcpError } from "../shared/errors.js";
 
 /** Timeout hint for SELECT queries (milliseconds) */
 const SELECT_TIMEOUT_MS = 5000;
@@ -129,7 +129,7 @@ const BLOCKED_SQL_PATTERNS: RegExp[] = [
 function assertSqlSafe(sql: string): void {
   for (const pattern of BLOCKED_SQL_PATTERNS) {
     if (pattern.test(sql)) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "POLICY_VIOLATION",
         "CREATE/DROP/ALTER DATABASE is permanently blocked at the execution layer. This operation cannot be performed.",
       );
@@ -137,9 +137,9 @@ function assertSqlSafe(sql: string): void {
   }
 }
 
-/** Classify a MySQL error into a XizhaoError */
+/** Classify a MySQL error into a XmSqlMcpError */
 function classifyMySqlError(err: unknown): never {
-  if (err instanceof XizhaoError) throw err;
+  if (err instanceof XmSqlMcpError) throw err;
 
   const msg = err instanceof Error ? err.message : String(err);
   const code = (err as { code?: string })?.code;
@@ -150,10 +150,10 @@ function classifyMySqlError(err: unknown): never {
     msg.includes("MAX_EXECUTION_TIME") ||
     msg.includes("Query execution was interrupted")
   ) {
-    throw new XizhaoError("TIMEOUT", "Query exceeded 5 second timeout");
+    throw new XmSqlMcpError("TIMEOUT", "Query exceeded 5 second timeout");
   }
 
-  throw new XizhaoError("MYSQL_ERROR", msg, {
+  throw new XmSqlMcpError("MYSQL_ERROR", msg, {
     mysqlCode: code ?? "UNKNOWN",
   });
 }
@@ -213,7 +213,9 @@ export async function executeSql(
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(
         () =>
-          reject(new XizhaoError("TIMEOUT", "Query exceeded 5 second timeout")),
+          reject(
+            new XmSqlMcpError("TIMEOUT", "Query exceeded 5 second timeout"),
+          ),
         QUERY_TIMEOUT_MS,
       ),
     );
@@ -282,7 +284,7 @@ export async function explainSql(
       await pool.query<(RowDataPacket & { EXPLAIN: string })[]>(explainSql);
 
     if (rows.length === 0) {
-      throw new XizhaoError("MYSQL_ERROR", "EXPLAIN returned no result");
+      throw new XmSqlMcpError("MYSQL_ERROR", "EXPLAIN returned no result");
     }
 
     const plan = JSON.parse(rows[0]!.EXPLAIN);
@@ -349,7 +351,7 @@ export async function describeTable(
     >(`SHOW CREATE TABLE ??`, [table]);
 
     if (ddlRows.length === 0) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "MYSQL_ERROR",
         `Table "${table}" not found or no access`,
       );

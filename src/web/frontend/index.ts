@@ -1,7 +1,7 @@
 /**
  * Dashboard frontend — single-page application.
  *
- * Embedded HTML/CSS/JS for the Xizhao Dashboard.
+ * Embedded HTML/CSS/JS for the XM-SQL-MCP Dashboard.
  * No build step required — served directly by Hono.
  */
 export const dashboardHtml = `<!DOCTYPE html>
@@ -9,7 +9,7 @@ export const dashboardHtml = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>犀照 Dashboard</title>
+<title>XM Dashboard</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--danger:#ef4444;--success:#22c55e;--warn:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -64,7 +64,7 @@ textarea{width:100%;background:#0f172a;color:var(--text);border:1px solid var(--
 </head>
 <body>
 <nav>
-  <div class="logo">🔥 犀照</div>
+  <div class="logo">🔥 XM</div>
   <a href="#" onclick="showTab('overview')" data-tab="overview">概览</a>
   <a href="#" onclick="showTab('approvals')" data-tab="approvals">审批</a>
   <a href="#" onclick="showTab('connections')" data-tab="connections">连接</a>

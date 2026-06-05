@@ -3,7 +3,7 @@
  *
  * Flow:
  *   1. First access must include `?token=xxx` query parameter
- *   2. On valid token → set HttpOnly cookie `xizhao_session`
+ *   2. On valid token → set HttpOnly cookie `xm_sql_mcp_session`
  *   3. Subsequent requests validated via cookie
  *   4. No cookie and no token → return 401 with token input page
  *
@@ -39,7 +39,7 @@ const tokenInputPage = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>犀照 Dashboard - 认证</title>
+<title>XM Dashboard - 认证</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #1a1a2e; color: #eee; }
   .card { background: #16213e; padding: 2rem; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); max-width: 400px; width: 100%; }
@@ -52,7 +52,7 @@ const tokenInputPage = `<!DOCTYPE html>
 </head>
 <body>
 <div class="card">
-  <h1>🔐 犀照 Dashboard</h1>
+  <h1>🔐 XM Dashboard</h1>
   <p>请输入启动时生成的 Token</p>
   <input id="token" type="text" placeholder="粘贴 Token..." autofocus>
   <button onclick="submit()">登录</button>
@@ -78,7 +78,7 @@ export function createAuthMiddleware(tokenPath: string): MiddlewareHandler {
   return async (c, next) => {
     // Check cookie first
     const cookie = c.req.header("cookie") ?? "";
-    const sessionMatch = cookie.match(/xizhao_session=([^;]+)/);
+    const sessionMatch = cookie.match(/xm_sql_mcp_session=([^;]+)/);
     if (sessionMatch?.[1] && isValidSession(sessionMatch[1])) {
       return next();
     }
@@ -92,7 +92,7 @@ export function createAuthMiddleware(tokenPath: string): MiddlewareHandler {
         status: 302,
         headers: {
           Location: c.req.path,
-          "Set-Cookie": `xizhao_session=${session}; HttpOnly; SameSite=Strict; Path=/`,
+          "Set-Cookie": `xm_sql_mcp_session=${session}; HttpOnly; SameSite=Strict; Path=/`,
         },
       });
     }

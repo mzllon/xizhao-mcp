@@ -21,7 +21,9 @@ afterEach(() => {
 
 describe("storage", () => {
   function createTmpDir(): string {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-storage-"));
+    const tmpDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "xm-sql-mcp-storage-"),
+    );
     cleanupQueue.push(tmpDir);
     return tmpDir;
   }

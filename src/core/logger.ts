@@ -1,5 +1,5 @@
 /**
- * Xizhao structured logger — pino + pino-roll + multistream.
+ * XM-SQL-MCP structured logger — pino + pino-roll + multistream.
  *
  * Three-layer log architecture (ADR-0012):
  *   1. Audit log    → SQLite `audit_log` table (separate module)
@@ -10,8 +10,8 @@
  *   - Dual output: rotating file (pino-roll) + stderr
  *   - Never writes to stdout (MCP protocol occupies it)
  *   - Built-in redact for sensitive fields
- *   - Level controlled by XIZHAO_LOG_LEVEL or --verbose
- *   - SQL full text logged by default; disable via XIZHAO_LOG_SQL=off
+ *   - Level controlled by XM_SQL_MCP_LOG_LEVEL or --verbose
+ *   - SQL full text logged by default; disable via XM_SQL_MCP_LOG_SQL=off
  */
 
 import fs from "node:fs";
@@ -31,7 +31,7 @@ const pinoRollTarget = createRequire(import.meta.url).resolve("pino-roll");
 
 /** Resolve effective log level from environment */
 function resolveLogLevel(verbose?: boolean): pino.Level {
-  const envLevel = process.env.XIZHAO_LOG_LEVEL;
+  const envLevel = process.env.XM_SQL_MCP_LOG_LEVEL;
   if (envLevel) {
     const normalized = envLevel.toLowerCase();
     const levels: pino.Level[] = [
@@ -53,7 +53,7 @@ function resolveLogLevel(verbose?: boolean): pino.Level {
 let _logger: pino.Logger | null = null;
 
 /**
- * Create (or return cached) Xizhao application logger.
+ * Create (or return cached) XM-SQL-MCP application logger.
  *
  * Uses pino.transport for worker-thread-based dual output:
  * 1. pino-roll: rotating file (daily + 10MB size limit)
@@ -141,8 +141,8 @@ export function resetLogger(): void {
 
 /**
  * Check whether SQL should be logged at full text.
- * Default: on. Set XIZHAO_LOG_SQL=off to disable.
+ * Default: on. Set XM_SQL_MCP_LOG_SQL=off to disable.
  */
 export function shouldLogSql(): boolean {
-  return process.env.XIZHAO_LOG_SQL !== "off";
+  return process.env.XM_SQL_MCP_LOG_SQL !== "off";
 }

@@ -11,12 +11,12 @@
 
 ### 测试金字塔
 
-| 层级 | 范围 | 工具 | v1 状态 |
-|------|------|------|--------|
-| 单元测试 | `core/*` 纯函数 | Vitest | ✅ 必做 |
-| 集成测试 | `core/*` + 真 SQLite + 真 MySQL | Vitest + testcontainers | ✅ 必做 |
-| MCP 协议测试 | MCP 客户端模拟 + Xizhao + MySQL | Vitest + MCP SDK Client | 🟡 部分做 |
-| E2E 测试 | Claude Code 真实跑 | 手动 | ❌ 不做 |
+| 层级         | 范围                                | 工具                    | v1 状态   |
+| ------------ | ----------------------------------- | ----------------------- | --------- |
+| 单元测试     | `core/*` 纯函数                     | Vitest                  | ✅ 必做   |
+| 集成测试     | `core/*` + 真 SQLite + 真 MySQL     | Vitest + testcontainers | ✅ 必做   |
+| MCP 协议测试 | MCP 客户端模拟 + XM-SQL-MCP + MySQL | Vitest + MCP SDK Client | 🟡 部分做 |
+| E2E 测试     | Claude Code 真实跑                  | 手动                    | ❌ 不做   |
 
 E2E 不做：LLM 行为不可控，自动化不可靠。手动测试 + 录屏演示。
 
@@ -43,14 +43,14 @@ tests/fixtures/sql/
 每个 SQL 文件对应一个 JSON 描述预期 AST 类型 + 预期 policy 决策。用 fixtures-driven 测试：
 
 ```ts
-describe.each(loadFixtures('tests/fixtures/sql/dangerous/'))(
-  'Dangerous SQL: $name',
+describe.each(loadFixtures("tests/fixtures/sql/dangerous/"))(
+  "Dangerous SQL: $name",
   ({ sql, expectedDecision }) => {
-    test('denied', () => {
+    test("denied", () => {
       const result = evaluate(sql, mockContext);
-      expect(result.kind).toBe('deny');
+      expect(result.kind).toBe("deny");
     });
-  }
+  },
 );
 ```
 
@@ -61,12 +61,12 @@ describe.each(loadFixtures('tests/fixtures/sql/dangerous/'))(
 不 mock MySQL。用 [`testcontainers-node`](https://node.testcontainers.org/) 拉真实 MySQL Docker 容器。
 
 ```ts
-import { MySqlContainer } from '@testcontainers/mysql';
+import { MySqlContainer } from "@testcontainers/mysql";
 
-describe('execute_sql integration', () => {
+describe("execute_sql integration", () => {
   let container;
   beforeAll(async () => {
-    container = await new MySqlContainer('mysql:8').start();
+    container = await new MySqlContainer("mysql:8").start();
   });
   afterAll(async () => container?.stop());
   // ...
@@ -86,10 +86,10 @@ CI（GitHub Actions）需要 Docker-in-Service 配置。
 
 ```ts
 fcTest.prop({ sql: fc.string() })(
-  'policy engine never crashes on any string input',
+  "policy engine never crashes on any string input",
   ({ sql }) => {
     expect(() => evaluate(sql, mockContext)).not.toThrow();
-  }
+  },
 );
 ```
 
@@ -127,16 +127,16 @@ jobs:
 
 ### 覆盖率目标
 
-| 模块 | 目标 |
-|------|------|
-| `core/policy.ts` | **95%+**（安全核心） |
-| `core/crypto.ts` | **95%+**（密码学核心） |
-| `core/audit.ts` | 90%+ |
-| `core/approval.ts` | 90%+ |
-| `core/connection.ts` | 80%+ |
-| `mcp/tools/*` | 70%+ |
-| `cli/commands/*` | 50%+ |
-| `web/*` | 50%+ |
+| 模块                 | 目标                   |
+| -------------------- | ---------------------- |
+| `core/policy.ts`     | **95%+**（安全核心）   |
+| `core/crypto.ts`     | **95%+**（密码学核心） |
+| `core/audit.ts`      | 90%+                   |
+| `core/approval.ts`   | 90%+                   |
+| `core/connection.ts` | 80%+                   |
+| `mcp/tools/*`        | 70%+                   |
+| `cli/commands/*`     | 50%+                   |
+| `web/*`              | 50%+                   |
 
 Vitest `coverageThreshold` 强制。低于阈值的 PR 不能合并（虽然单人开发，但写进配置防自己放松）。
 

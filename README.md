@@ -1,4 +1,4 @@
-# 🔥 犀照 Xizhao
+# 🔥 XM XM-SQL-MCP
 
 > **AI ↔ MySQL 安全代理** — 让 AI Agent 安全地访问 MySQL，带 AST 策略引擎、防篡改审计日志和自审批工作流。
 
@@ -21,7 +21,7 @@
 
 ```
 ┌─────────────┐    MCP/Stdio    ┌──────────────────┐    MySQL     ┌───────┐
-│  AI Client   │ ◄────────────► │   xizhao client  │ ◄──────────► │ MySQL │
+│  AI Client   │ ◄────────────► │   xm-sql-mcp client  │ ◄──────────► │ MySQL │
 │ (Claude etc) │                │                  │              │       │
 └─────────────┘                │  ┌────────────┐  │              └───────┘
                                │  │ Policy     │  │
@@ -39,17 +39,17 @@
 ### 安装
 
 ```bash
-git clone https://github.com/mzllon/xizhao-mcp.git
-cd xizhao-mcp
+git clone https://github.com/mzllon/xm-sql-mcp.git
+cd xm-sql-mcp
 pnpm install
 pnpm build
-npm link    # 全局可用 xizhao 命令
+npm link    # 全局可用 xm-sql-mcp 命令
 ```
 
 ### 初始化
 
 ```bash
-xizhao setup
+xm-sql-mcp setup
 ```
 
 交互式向导引导你完成：MySQL 连接配置 → 测试连接 → 选择策略预设 → 保存。
@@ -59,14 +59,14 @@ xizhao setup
 **终端 A** — 启动 MCP Server（AI 连这里）：
 
 ```bash
-xizhao client
+xm-sql-mcp client
 ```
 
 **终端 B** — 启动 Dashboard（审批管理）：
 
 ```bash
-xizhao dashboard
-# 🚀 犀照 Dashboard: http://localhost:9020/?token=xxx
+xm-sql-mcp dashboard
+# 🚀 XM Dashboard: http://localhost:9020/?token=xxx
 ```
 
 ### 配置 AI 客户端
@@ -74,7 +74,7 @@ xizhao dashboard
 **Claude Code:**
 
 ```bash
-claude mcp add xizhao -- xizhao client
+claude mcp add xm-sql-mcp -- xm-sql-mcp client
 ```
 
 **Cursor / Codex / 其他 MCP 客户端:**
@@ -82,8 +82,8 @@ claude mcp add xizhao -- xizhao client
 ```json
 {
   "mcpServers": {
-    "xizhao": {
-      "command": "xizhao",
+    "xm-sql-mcp": {
+      "command": "xm-sql-mcp",
       "args": ["client"]
     }
   }
@@ -93,16 +93,16 @@ claude mcp add xizhao -- xizhao client
 ## CLI 命令
 
 ```
-xizhao setup                交互式初始化向导
-xizhao client               启动 MCP Stdio 服务
-xizhao dashboard [-p PORT]  启动 Dashboard Web 控制台
-xizhao conn list            列出所有连接
-xizhao conn add             添加连接
-xizhao conn edit <name>     编辑连接
-xizhao conn delete <name>   删除连接
-xizhao conn test <name>     测试连接
-xizhao policy <name>        查看连接策略
-xizhao audit [--since 24h]  查看审计日志
+xm-sql-mcp setup                交互式初始化向导
+xm-sql-mcp client               启动 MCP Stdio 服务
+xm-sql-mcp dashboard [-p PORT]  启动 Dashboard Web 控制台
+xm-sql-mcp conn list            列出所有连接
+xm-sql-mcp conn add             添加连接
+xm-sql-mcp conn edit <name>     编辑连接
+xm-sql-mcp conn delete <name>   删除连接
+xm-sql-mcp conn test <name>     测试连接
+xm-sql-mcp policy <name>        查看连接策略
+xm-sql-mcp audit [--since 24h]  查看审计日志
 ```
 
 ## MCP 工具
@@ -125,7 +125,7 @@ AI 客户端可调用 6 个工具。**`list_connections` 必须最先调用**以
 ```
 1. AI 调用 list_connections → 发现可用连接名
 2. AI 调用 execute_sql(connection, sql) → 策略引擎判定"需要审批"
-3. xizhao 返回 NEED_APPROVAL + taskId + approvalUrl
+3. xm-sql-mcp 返回 NEED_APPROVAL + taskId + approvalUrl
 4. 开发者在 Dashboard 点击"批准"（可选修改 SQL）
 5. AI 调用 check_task_status 发现已批准
 6. AI 重新调用 execute_sql → 自动 consume → 执行成功
@@ -156,7 +156,7 @@ AI 客户端可调用 6 个工具。**`list_connections` 必须最先调用**以
 - 每条记录 SHA-256 哈希链链接
 - 记录：工具名、SQL、连接、策略决定、执行状态、耗时
 - 支持 CLI 和 Dashboard 查询
-- `xizhao audit --deny-only` 查看被拒绝的操作
+- `xm-sql-mcp audit --deny-only` 查看被拒绝的操作
 
 ## 技术栈
 

@@ -1,5 +1,5 @@
 /**
- * ULID wrapper for Xizhao.
+ * ULID wrapper for XM-SQL-MCP.
  *
  * Wraps the `ulid` package so tests can mock ID generation.
  */

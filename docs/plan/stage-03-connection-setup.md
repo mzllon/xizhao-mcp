@@ -1,13 +1,13 @@
 # Stage 03：连接配置与 CLI 命令
 
 > **输入：** Stage 02 存储 + 加密就绪
-> **输出：** 连接 CRUD + `xizhao setup` 7 步向导 + 全部 CLI 子命令
+> **输出：** 连接 CRUD + `xm-sql-mcp setup` 7 步向导 + 全部 CLI 子命令
 > **依赖：** Stage 02
 > **关联 ADR：** [0006](../adr/0006-credential-encryption-and-master-key.md)、[0007](../adr/0007-onboarding-and-client-first.md)
 
 ## 目标
 
-实现用户与 Xizhao 的所有交互入口：CLI 命令 + setup 向导。本阶段完成后，用户可以通过 `xizhao setup` 创建连接、通过 `xizhao conn/policy/audit` 管理配置。
+实现用户与 XM-SQL-MCP 的所有交互入口：CLI 命令 + setup 向导。本阶段完成后，用户可以通过 `xm-sql-mcp setup` 创建连接、通过 `xm-sql-mcp conn/policy/audit` 管理配置。
 
 ## 文件清单
 
@@ -40,27 +40,29 @@
 ### 3.2 CLI 主入口
 
 - [ ] 实现 `src/cli/index.ts`：
+
   ```ts
-  import { Command } from 'commander';
-  import { VERSION } from '../shared/version.js';
-  
+  import { Command } from "commander";
+  import { VERSION } from "../shared/version.js";
+
   const program = new Command();
   program
-    .name('xizhao')
-    .description('犀照 - AI ↔ MySQL 安全代理')
+    .name("xm-sql-mcp")
+    .description("XM - AI ↔ MySQL 安全代理")
     .version(VERSION)
-    .option('--verbose', '启用 debug 日志');
-  
+    .option("--verbose", "启用 debug 日志");
+
   program.addCommand(setupCommand);
   program.addCommand(clientCommand);
   program.addCommand(dashboardCommand);
   program.addCommand(connCommand);
   program.addCommand(policyCommand);
   program.addCommand(auditCommand);
-  
+
   await program.parseAsync(process.argv);
   ```
-- [ ] 实现 `--verbose` 全局 flag：设置 `XIZHAO_LOG_LEVEL=debug`
+
+- [ ] 实现 `--verbose` 全局 flag：设置 `XM_SQL_MCP_LOG_LEVEL=debug`
 - [ ] 在 `process.argv` 解析前设置日志（让 verbose 在所有子命令中生效）
 
 ### 3.3 Setup 7 步向导（关键）
@@ -114,36 +116,36 @@
 
 - [ ] **第 7 步**：输出 MCP 客户端配置片段
   - 根据 第 6 步选择输出对应配置：
-    - **Claude Code**：打印 `claude mcp add xizhao -- xizhao client`
+    - **Claude Code**：打印 `claude mcp add xm-sql-mcp -- xm-sql-mcp client`
     - **Codex**：自动探测版本（`codex --version`），输出对应格式（参考 ADR-0007 line 77-86 的探测策略）
     - **Cursor**：打印 Settings → MCP 添加说明
     - **其他**：打印通用 Stdio MCP 信息
   - 最后打印示例对话：
     ```
     ✅ 配置完成!现在你可以在 Claude Code 里说:
-       "用 xizhao 帮我查一下 orders 表有多少行"
+       "用 xm-sql-mcp 帮我查一下 orders 表有多少行"
     ```
 
 ### 3.4 CLI 子命令：conn
 
-- [ ] 实现 `xizhao conn <subcmd>`：
-  - `xizhao conn list` —— 表格形式列出所有连接（name, host, default_schema, policy_preset）
-  - `xizhao conn add` —— 走 setup 的简化版（不含 MCP 客户端配置）
-  - `xizhao conn edit <name>` —— 交互式编辑（inquirer）
-  - `xizhao conn delete <name>` —— 二次确认后删除
-  - `xizhao conn test <name>` —— 用存储的配置测试连接
+- [ ] 实现 `xm-sql-mcp conn <subcmd>`：
+  - `xm-sql-mcp conn list` —— 表格形式列出所有连接（name, host, default_schema, policy_preset）
+  - `xm-sql-mcp conn add` —— 走 setup 的简化版（不含 MCP 客户端配置）
+  - `xm-sql-mcp conn edit <name>` —— 交互式编辑（inquirer）
+  - `xm-sql-mcp conn delete <name>` —— 二次确认后删除
+  - `xm-sql-mcp conn test <name>` —— 用存储的配置测试连接
 
 ### 3.5 CLI 子命令：policy
 
-- [ ] 实现 `xizhao policy <subcmd>`：
-  - `xizhao policy show <conn>` —— 显示该连接的策略（JSON pretty print）
-  - `xizhao policy set <conn> <key> <value>` —— 设置单个策略字段
-    - 例：`xizhao policy set dev-orders maxLimit 500`
-    - 例：`xizhao policy set dev-orders enforceLimit false`
+- [ ] 实现 `xm-sql-mcp policy <subcmd>`：
+  - `xm-sql-mcp policy show <conn>` —— 显示该连接的策略（JSON pretty print）
+  - `xm-sql-mcp policy set <conn> <key> <value>` —— 设置单个策略字段
+    - 例：`xm-sql-mcp policy set dev-orders maxLimit 500`
+    - 例：`xm-sql-mcp policy set dev-orders enforceLimit false`
 
 ### 3.6 CLI 子命令：audit
 
-- [ ] 实现 `xizhao audit [options]`：
+- [ ] 实现 `xm-sql-mcp audit [options]`：
   - `--since <duration>` —— 显示 N 时间内的（如 `--since 24h`、`--since 7d`）
   - `--deny-only` —— 只显示被拒绝的
   - `--sql <pattern>` —— SQL 包含 pattern 的（LIKE 语法）
@@ -168,6 +170,7 @@ node dist/cli/index.js audit --help
 ```
 
 预期：
+
 - 帮助输出包含 `setup` / `client` / `dashboard` / `conn` / `policy` / `audit` 6 个命令
 - `setup` 在没装 MySQL 时能优雅退出（不报 stack trace）
 - 测试覆盖率：`src/core/connection.ts` ≥ 80%，CLI 模块 ≥ 50%
@@ -192,16 +195,16 @@ node dist/cli/index.js audit --help
 ### 最小权限 SQL 生成
 
 - 根据 第 1 步的 username + 第 4 步的策略预设推断最小权限：
-  - `dev-default` → SELECT/INSERT/UPDATE/DELETE on schema.*
-  - `readonly-strict` → SELECT on schema.*
-  - `demo-loose` → SELECT/INSERT/UPDATE/DELETE/CREATE/DROP/ALTER/INDEX on schema.*
+  - `dev-default` → SELECT/INSERT/UPDATE/DELETE on schema.\*
+  - `readonly-strict` → SELECT on schema.\*
+  - `demo-loose` → SELECT/INSERT/UPDATE/DELETE/CREATE/DROP/ALTER/INDEX on schema.\*
 - 只展示，不执行
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| Codex CLI 在测试环境不可用 | mock child_process，离线测试逻辑分支 |
+| 风险                              | 应对                                                 |
+| --------------------------------- | ---------------------------------------------------- |
+| Codex CLI 在测试环境不可用        | mock child_process，离线测试逻辑分支                 |
 | Setup 向导步骤多，用户中途 Ctrl+C | 用 AbortController + SIGINT 处理，确保不留半成品配置 |
-| MySQL `SHOW GRANTS` 输出格式不一 | 用 `mysql2` 解析后再展示，处理不同版本差异 |
-| 连接名冲突（已存在时再 add） | 提示用户是否覆盖或换名 |
+| MySQL `SHOW GRANTS` 输出格式不一  | 用 `mysql2` 解析后再展示，处理不同版本差异           |
+| 连接名冲突（已存在时再 add）      | 提示用户是否覆盖或换名                               |

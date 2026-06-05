@@ -19,7 +19,7 @@ Stage 04 策略引擎在 AST 层拦截危险 SQL（包括 `create_database`、`d
 - `DROP DATABASE` / `DROP SCHEMA` → 永久阻止
 - `ALTER DATABASE` → 永久阻止
 
-实现方式：正则匹配 SQL 文本，命中即抛 `XizhaoError('POLICY_VIOLATION')`，**不经过策略引擎**。
+实现方式：正则匹配 SQL 文本，命中即抛 `XmSqlMcpError('POLICY_VIOLATION')`，**不经过策略引擎**。
 
 ### 两层防御模型
 

@@ -22,7 +22,7 @@ import crypto from "node:crypto";
 import { createApprovalTask } from "../../core/approval.js";
 import { executeSql } from "../../core/mysql.js";
 import { evaluate, parsePolicyConfig } from "../../core/policy/index.js";
-import { XizhaoError } from "../../shared/errors.js";
+import { XmSqlMcpError } from "../../shared/errors.js";
 import { success } from "../response.js";
 
 /** SQL hash for policy context and approval dedup */
@@ -45,18 +45,18 @@ export function createExecuteSqlHandler(deps: ExecuteSqlDeps) {
     const sql = args.sql as string | undefined;
 
     if (!connectionName) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         "Missing 'connection' argument",
       );
     }
     if (!sql) {
-      throw new XizhaoError("SQL_PARSE_ERROR", "Missing 'sql' argument");
+      throw new XmSqlMcpError("SQL_PARSE_ERROR", "Missing 'sql' argument");
     }
 
     const conn = handlerCtx.conn;
     if (!conn) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         `Connection "${connectionName}" not found`,
       );
@@ -75,7 +75,7 @@ export function createExecuteSqlHandler(deps: ExecuteSqlDeps) {
     });
 
     if (decision.kind === "deny") {
-      throw new XizhaoError("POLICY_VIOLATION", decision.reason, {
+      throw new XmSqlMcpError("POLICY_VIOLATION", decision.reason, {
         rule: decision.rule,
       });
     }
@@ -91,7 +91,7 @@ export function createExecuteSqlHandler(deps: ExecuteSqlDeps) {
         triggerRule: decision.rule,
       });
 
-      throw new XizhaoError("NEED_APPROVAL", decision.reason, {
+      throw new XmSqlMcpError("NEED_APPROVAL", decision.reason, {
         taskId: task.id,
         triggerRule: decision.rule,
         triggerReason: decision.reason,

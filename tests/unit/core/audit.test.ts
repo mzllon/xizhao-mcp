@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 function createTmpStorage() {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-audit-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-audit-"));
   cleanupQueue.push(tmpDir);
   const { raw, close } = openStorage(tmpDir);
   return { db: raw, close };

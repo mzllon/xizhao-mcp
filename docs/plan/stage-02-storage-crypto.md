@@ -28,33 +28,35 @@
 ### 2.1 跨平台路径
 
 - [ ] 实现 `src/core/app-paths.ts`：
+
   ```ts
-  import envPaths from 'env-paths';
-  import path from 'node:path';
-  
+  import envPaths from "env-paths";
+  import path from "node:path";
+
   export function getAppDir(opts?: { override?: string }): string {
     if (opts?.override) return path.resolve(opts.override);
-    const paths = envPaths('xizhao', { suffix: '' });
-    return paths.data;   // macOS: ~/Library/Application Support/xizhao
-                          // Linux: ~/.local/share/xizhao
-                          // Windows: %LOCALAPPDATA%\xizhao\Data
+    const paths = envPaths("xm-sql-mcp", { suffix: "" });
+    return paths.data; // macOS: ~/Library/Application Support/xm-sql-mcp
+    // Linux: ~/.local/share/xm-sql-mcp
+    // Windows: %LOCALAPPDATA%\xm-sql-mcp\Data
   }
-  
-  // 但默认配置目录我们用 ~/.xizhao 而非 env-paths 默认,与 ADR-0007 一致
+
+  // 但默认配置目录我们用 ~/.xm-sql-mcp 而非 env-paths 默认,与 ADR-0007 一致
   export function getDefaultAppDir(): string {
-    const home = process.env[process.platform === 'win32' ? 'USERPROFILE' : 'HOME'];
-    return path.join(home!, '.xizhao');
+    const home =
+      process.env[process.platform === "win32" ? "USERPROFILE" : "HOME"];
+    return path.join(home!, ".xm-sql-mcp");
   }
-  
+
   export function getPaths(appDir?: string) {
-    const dir = appDir ?? (process.env.XIZHAO_HOME ?? getDefaultAppDir());
+    const dir = appDir ?? process.env.XM_SQL_MCP_HOME ?? getDefaultAppDir();
     return {
       dir,
-      configDb: path.join(dir, 'config.db'),
-      masterKey: path.join(dir, 'master.key'),
-      dashboardToken: path.join(dir, 'dashboard.token'),
-      logsDir: path.join(dir, 'logs'),
-      logFile: path.join(dir, 'logs', 'xizhao.log'),
+      configDb: path.join(dir, "config.db"),
+      masterKey: path.join(dir, "master.key"),
+      dashboardToken: path.join(dir, "dashboard.token"),
+      logsDir: path.join(dir, "logs"),
+      logFile: path.join(dir, "logs", "xm-sql-mcp.log"),
     };
   }
   ```
@@ -72,10 +74,10 @@
   - 用 better-sqlite3 打开 `{appDir}/config.db`
   - **必须设置 WAL**：
     ```ts
-    db.pragma('journal_mode = WAL');
-    db.pragma('busy_timeout = 5000');   // 5s 等待其他进程释放锁
-    db.pragma('foreign_keys = ON');
-    db.pragma('synchronous = NORMAL');  // WAL 下安全
+    db.pragma("journal_mode = WAL");
+    db.pragma("busy_timeout = 5000"); // 5s 等待其他进程释放锁
+    db.pragma("foreign_keys = ON");
+    db.pragma("synchronous = NORMAL"); // WAL 下安全
     ```
   - 跑 drizzle migration（首次创建表）
   - 返回 `Database` 实例 + 关闭方法
@@ -84,8 +86,8 @@
 ### 2.3 Master Key
 
 - [ ] 实现 `loadOrCreateMasterKey(opts) -> Buffer`：
-  - 默认路径 `~/.xizhao/master.key`
-  - 环境变量 `XIZHAO_MASTER_KEY_FILE` 可覆盖路径
+  - 默认路径 `~/.xm-sql-mcp/master.key`
+  - 环境变量 `XM_SQL_MCP_MASTER_KEY_FILE` 可覆盖路径
   - 文件不存在时生成 32 字节随机数、写入（mode `0o600`）、返回
   - 文件存在时读取并验证长度为 32 字节
   - 文件长度错误时抛 `XIZhaoError('MASTER_KEY_CORRUPT')`
@@ -100,7 +102,7 @@
 - [ ] 实现 `decryptSecret(payload: string, masterKey: Buffer) -> string`：
   - 解析 base64
   - 前 12 字节为 IV、接下来 16 字节为 auth tag、剩余为 ciphertext
-  - 任何解码错误抛 `XizhaoError('DECRYPT_FAILED')`
+  - 任何解码错误抛 `XmSqlMcpError('DECRYPT_FAILED')`
 - [ ] 实现 `rotateMasterKey(oldKey, newKey, allEncryptedRecords)`（v2 用，先预留接口）
 
 ### 2.5 测试
@@ -128,6 +130,7 @@ pnpm test:coverage -- src/core/crypto.ts src/core/storage.ts
 ```
 
 预期：
+
 - 所有测试通过
 - `src/core/crypto.ts` 覆盖率 ≥ 95%
 - `src/core/storage.ts` 覆盖率 ≥ 85%
@@ -157,8 +160,8 @@ pnpm test:coverage -- src/core/crypto.ts src/core/storage.ts
 
 ## 实施风险
 
-| 风险 | 应对 |
-|------|------|
-| better-sqlite3 在 Windows ARM 上无 prebuilt | 锁定 x64 构建，文档说明 |
-| WAL 模式在 SMB / NFS 共享目录下不工作 | 文档说明必须本地文件系统 |
-| `XIZHAO_HOME` 在测试时未清理导致测试间污染 | 测试用 `beforeEach` 创建临时目录 |
+| 风险                                           | 应对                             |
+| ---------------------------------------------- | -------------------------------- |
+| better-sqlite3 在 Windows ARM 上无 prebuilt    | 锁定 x64 构建，文档说明          |
+| WAL 模式在 SMB / NFS 共享目录下不工作          | 文档说明必须本地文件系统         |
+| `XM_SQL_MCP_HOME` 在测试时未清理导致测试间污染 | 测试用 `beforeEach` 创建临时目录 |

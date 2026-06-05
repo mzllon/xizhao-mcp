@@ -5,19 +5,19 @@
 
 ## Context
 
-连接配置中的 MySQL 密码必须保护——SQLite 文件单独泄漏不应直接暴露所有 MySQL 凭证。但与 API Key 不同，MySQL 密码**必须可还原**（Xizhao 需要拿明文去连 MySQL），所以不能用单向 hash，必须用**对称加密 + 主密钥**方案。
+连接配置中的 MySQL 密码必须保护——SQLite 文件单独泄漏不应直接暴露所有 MySQL 凭证。但与 API Key 不同，MySQL 密码**必须可还原**（XM-SQL-MCP 需要拿明文去连 MySQL），所以不能用单向 hash，必须用**对称加密 + 主密钥**方案。
 
 ## Decision
 
 ### 主密钥来源：独立文件
 
-首次启动时自动生成 32 字节随机主密钥，写入 `~/.xizhao/master.key`（或环境变量 `XIZHAO_MASTER_KEY_FILE` 指定的位置），权限 `0600`。
+首次启动时自动生成 32 字节随机主密钥，写入 `~/.xm-sql-mcp/master.key`（或环境变量 `XM_SQL_MCP_MASTER_KEY_FILE` 指定的位置），权限 `0600`。
 
 - SQLite 文件单独泄漏 → 无法解密密码。
 - master.key 单独泄漏 → 无法解密密码（没有密文）。
 - **两者同时泄漏 → 密码暴露**。这是显式接受的威胁模型。
 
-**不选环境变量**作为唯一来源：环境变量在 ps、proc、容器 inspect 中可见，且重启后需要重新注入，运维门槛高。但保留 `XIZHAO_MASTER_KEY_FILE` 环境变量作为企业部署的扩展位。
+**不选环境变量**作为唯一来源：环境变量在 ps、proc、容器 inspect 中可见，且重启后需要重新注入，运维门槛高。但保留 `XM_SQL_MCP_MASTER_KEY_FILE` 环境变量作为企业部署的扩展位。
 
 **不选密码派生**（如 PBKDF2 from admin password）：会导致 admin 改密时所有连接需重新加密，且 Server 重启需 admin 输密码解锁，破坏无人值守运维。
 
@@ -54,7 +54,7 @@ CREATE TABLE connections (
 **首次生成时强制提示**：
 
 ```
-⚠️  Generated master key at /home/you/.xizhao/master.key
+⚠️  Generated master key at /home/you/.xm-sql-mcp/master.key
 ⚠️  Back this file up somewhere safe.
 ⚠️  If lost, ALL stored MySQL passwords become unrecoverable.
 ```

@@ -14,7 +14,7 @@ import { POLICY_PRESETS } from "../../shared/presets.js";
 export const setupCommand = new Command("setup")
   .description("交互式初始化向导（7 步）")
   .action(async () => {
-    console.log(chalk.bold("\n🦏 犀照 Xizhao - 首次配置向导\n"));
+    console.log(chalk.bold("\n🦏 XM XM-SQL-MCP - 首次配置向导\n"));
 
     const { raw, close, paths } = openStorage();
     const masterKey = loadOrCreateMasterKey(paths.dir);
@@ -153,29 +153,31 @@ export const setupCommand = new Command("setup")
       console.log(chalk.bold("\n📋 MCP 客户端配置:\n"));
       switch (clientType) {
         case "claude-code":
-          console.log(chalk.cyan("  claude mcp add xizhao -- xizhao client"));
+          console.log(
+            chalk.cyan("  claude mcp add xm-sql-mcp -- xm-sql-mcp client"),
+          );
           break;
         case "codex":
           console.log(chalk.cyan("  # 在 codex 配置文件中添加:"));
           console.log(
             chalk.cyan(
-              '  "mcpServers": { "xizhao": { "command": "xizhao", "args": ["client"] } }',
+              '  "mcpServers": { "xm-sql-mcp": { "command": "xm-sql-mcp", "args": ["client"] } }',
             ),
           );
           break;
         case "cursor":
           console.log(chalk.cyan("  Settings → MCP → Add Server"));
-          console.log(chalk.cyan("  Command: xizhao client"));
+          console.log(chalk.cyan("  Command: xm-sql-mcp client"));
           break;
         default:
-          console.log(chalk.cyan("  # Stdio MCP Server: xizhao client"));
+          console.log(chalk.cyan("  # Stdio MCP Server: xm-sql-mcp client"));
       }
 
       console.log(chalk.green(`\n✅ 配置完成！连接 "${connName}" 已保存。`));
       console.log(chalk.dim(`  现在你可以在 AI 客户端中说:`));
       console.log(
         chalk.dim(
-          `  "用 xizhao 帮我查一下 ${defaultSchema || "你的数据库"} 的表"\n`,
+          `  "用 xm-sql-mcp 帮我查一下 ${defaultSchema || "你的数据库"} 的表"\n`,
         ),
       );
     } finally {

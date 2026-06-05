@@ -5,13 +5,13 @@
 
 ## Context
 
-策略引擎是犀照的核心防线，决定每条 AI 生成的 SQL 能否执行。PRD 列出 5 条策略需求（S-01 ~ S-05），实现路线有三：
+策略引擎是XM的核心防线，决定每条 AI 生成的 SQL 能否执行。PRD 列出 5 条策略需求（S-01 ~ S-05），实现路线有三：
 
 1. **字符串 / 正则黑名单**：实现简单但可被注释、大小写、Unicode 空白、动态 SQL 等手法 5 秒绕过，等同 security theater。
 2. **SQL AST 解析**：用真正的 SQL parser 把 SQL 解析成语法树，基于语法树判定。
 3. **MySQL 自身权限**：依赖 MySQL `GRANT` / `READ_ONLY` 做硬约束，应用层不做策略。
 
-犀照定位为部门级内部工具 + 开源作品集（见 [ADR-0001](./0001-non-commercial-positioning.md)）。策略引擎是作品集的技术叙事核心，必须在 README 上能堂堂正正写"AST-based, not string matching"。
+XM定位为部门级内部工具 + 开源作品集（见 [ADR-0001](./0001-non-commercial-positioning.md)）。策略引擎是作品集的技术叙事核心，必须在 README 上能堂堂正正写"AST-based, not string matching"。
 
 ## Decision
 
@@ -34,13 +34,13 @@
 
 **AST 路径覆盖的 PRD 需求**（一锅端）：
 
-| 编号 | 需求 | AST 实现方式 |
-|------|------|------------|
-| S-01 | 关键字黑名单 | 检查 `statement.type` 是否在禁用列表 |
+| 编号 | 需求         | AST 实现方式                                       |
+| ---- | ------------ | -------------------------------------------------- |
+| S-01 | 关键字黑名单 | 检查 `statement.type` 是否在禁用列表               |
 | S-02 | 操作类型控制 | 检查 `statement.type` 是否在该连接允许的类型集合内 |
-| S-03 | 强制 LIMIT | 检查 `statement.limit` 是否存在且 ≤ 上限 |
-| S-04 | 表级权限 | 检查 `statement.tables` 是否都在白名单内 |
-| S-05 | 连接级只读 | 等价于 S-02 只允许 `select` |
+| S-03 | 强制 LIMIT   | 检查 `statement.limit` 是否存在且 ≤ 上限           |
+| S-04 | 表级权限     | 检查 `statement.tables` 是否都在白名单内           |
+| S-05 | 连接级只读   | 等价于 S-02 只允许 `select`                        |
 
 **架构简洁性**：所有策略收敛到一个判定函数 `evaluate(sql, ctx) → Decision`，无并发分支，无副作用，易于测试。
 

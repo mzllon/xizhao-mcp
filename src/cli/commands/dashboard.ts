@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 /**
- * \`xizhao dashboard\` — start the local web Dashboard.
+ * \`xm-sql-mcp dashboard\` — start the local web Dashboard.
  *
  * Flow:
- *   1. Generate token → write to ~/.xizhao/dashboard.token
+ *   1. Generate token → write to ~/.xm-sql-mcp/dashboard.token
  *   2. Find available port (9020–9025)
  *   3. Start Hono server
  *   4. Open browser with ?token=xxx
@@ -68,7 +68,7 @@ export const dashboardCommand = new Command("dashboard")
     );
 
     const url = `http://localhost:${port}/?token=${token}`;
-    console.log(`🚀 犀照 Dashboard: ${url}`);
+    console.log(`🚀 XM Dashboard: ${url}`);
 
     // Open browser (best-effort)
     try {

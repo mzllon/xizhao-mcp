@@ -10,10 +10,10 @@
 
 MCP 客户端（Claude Code / Codex / Cursor / OpenCode 等）支持两种配置级别：
 
-| 级别   | 配置位置                          | 进程模型                     |
-| ------ | --------------------------------- | ---------------------------- |
-| 用户级 | `~/.claude/settings.json`         | 一个 xizhao 进程服务所有项目 |
-| 项目级 | `<project>/.claude/settings.json` | 每个项目独立进程             |
+| 级别   | 配置位置                          | 进程模型                         |
+| ------ | --------------------------------- | -------------------------------- |
+| 用户级 | `~/.claude/settings.json`         | 一个 xm-sql-mcp 进程服务所有项目 |
+| 项目级 | `<project>/.claude/settings.json` | 每个项目独立进程                 |
 
 项目级配置可以通过 CLI 参数传递默认值；但用户级配置只有一个进程，无法按项目区分参数。
 
@@ -36,7 +36,7 @@ MCP 客户端（Claude Code / Codex / Cursor / OpenCode 等）支持两种配置
 
 - `connections` 表增加 `description TEXT` 列（可为空）
 - `Connection`、`ConnectionInfo`、`ConnectionInput` 接口增加 `description?: string`
-- `xizhao setup` / `xizhao conn add` 增加 `--description` 参数和交互式输入
+- `xm-sql-mcp setup` / `xm-sql-mcp conn add` 增加 `--description` 参数和交互式输入
 - Dashboard 连接编辑页增加描述字段
 
 **`list_connections` 响应变更**：
@@ -78,16 +78,16 @@ AI 看到如下响应后即可准确选择：
 
 ### 第二层：CLI 参数（项目级 MCP 配置专用）
 
-`xizhao client` 新增两个可选参数：
+`xm-sql-mcp client` 新增两个可选参数：
 
 ```
-xizhao client [--default-connection <name>] [--default-schema <schema>]
+xm-sql-mcp client [--default-connection <name>] [--default-schema <schema>]
 ```
 
 等价环境变量（优先级低于 CLI 参数）：
 
-- `XIZHAO_DEFAULT_CONNECTION`
-- `XIZHAO_DEFAULT_SCHEMA`
+- `XM_SQL_MCP_DEFAULT_CONNECTION`
+- `XM_SQL_MCP_DEFAULT_SCHEMA`
 
 **项目级 MCP 配置示例**：
 
@@ -95,8 +95,8 @@ xizhao client [--default-connection <name>] [--default-schema <schema>]
 // <project>/.claude/settings.json
 {
   "mcpServers": {
-    "xizhao": {
-      "command": "xizhao",
+    "xm-sql-mcp": {
+      "command": "xm-sql-mcp",
       "args": [
         "client",
         "--default-connection",
@@ -140,7 +140,7 @@ xizhao client [--default-connection <name>] [--default-schema <schema>]
 ```markdown
 ## 数据库
 
-使用 xizhao 的 "dev-a" 连接，schema 为 "app_a"
+使用 xm-sql-mcp 的 "dev-a" 连接，schema 为 "app_a"
 ```
 
 无需任何代码改动，所有 MCP 客户端都支持项目级指令文件。AI 读取后遵循。
@@ -169,13 +169,13 @@ xizhao client [--default-connection <name>] [--default-schema <schema>]
 
 **已接受的代价**：
 
-- 连接描述依赖开发者填写。如果开发者不写，AI 只能靠连接名和 schema 猜测。`xizhao setup` 应鼓励（但不强制）填写。
+- 连接描述依赖开发者填写。如果开发者不写，AI 只能靠连接名和 schema 猜测。`xm-sql-mcp setup` 应鼓励（但不强制）填写。
 - CLI 参数对用户级 MCP 配置无效。这是 MCP 架构的固有限制，不是我们的 bug。
 - 项目指令文件是软约束，AI 理论上可能不遵循。实际中 Claude / GPT 等对指令文件遵循度很高。
 
 **不做的事**：
 
-- 不实现 `.xizhao.json` 项目配置文件——服务端无法可靠感知项目目录。
+- 不实现 `.xm-sql-mcp.json` 项目配置文件——服务端无法可靠感知项目目录。
 - 不让 `connection` 参数变为可选——保持工具契约简洁，避免隐式状态。
 - 不实现 `set_project` / `use` 之类的会话工具——增加复杂度但价值有限。
 
@@ -189,9 +189,9 @@ xizhao client [--default-connection <name>] [--default-schema <schema>]
 
 ### CLI
 
-- `xizhao client` 新增 `--default-connection` / `--default-schema` 参数
-- `xizhao setup` / `xizhao conn add` 增加 description 交互式输入
-- `xizhao conn edit` 支持修改 description
+- `xm-sql-mcp client` 新增 `--default-connection` / `--default-schema` 参数
+- `xm-sql-mcp setup` / `xm-sql-mcp conn add` 增加 description 交互式输入
+- `xm-sql-mcp conn edit` 支持修改 description
 
 ### MCP Server
 

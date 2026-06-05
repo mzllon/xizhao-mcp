@@ -100,7 +100,7 @@ describe("crypto", () => {
 
   describe("loadOrCreateMasterKey", () => {
     it("creates a new key if file does not exist", () => {
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-test-"));
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-test-"));
       try {
         const key = loadOrCreateMasterKey(tmpDir);
         expect(key).toBeInstanceOf(Buffer);
@@ -112,7 +112,7 @@ describe("crypto", () => {
     });
 
     it("loads existing key", () => {
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-test-"));
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-test-"));
       try {
         const key1 = loadOrCreateMasterKey(tmpDir);
         const key2 = loadOrCreateMasterKey(tmpDir);
@@ -123,7 +123,7 @@ describe("crypto", () => {
     });
 
     it("throws on corrupt key (wrong length)", () => {
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-test-"));
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-test-"));
       try {
         fs.writeFileSync(path.join(tmpDir, "master.key"), Buffer.alloc(16));
         expect(() => loadOrCreateMasterKey(tmpDir)).toThrow(
@@ -134,20 +134,20 @@ describe("crypto", () => {
       }
     });
 
-    it("respects XIZHAO_MASTER_KEY_FILE env var", () => {
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-test-"));
+    it("respects XM_SQL_MCP_MASTER_KEY_FILE env var", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-test-"));
       const customPath = path.join(tmpDir, "custom.key");
-      const origEnv = process.env.XIZHAO_MASTER_KEY_FILE;
+      const origEnv = process.env.XM_SQL_MCP_MASTER_KEY_FILE;
       try {
-        process.env.XIZHAO_MASTER_KEY_FILE = customPath;
+        process.env.XM_SQL_MCP_MASTER_KEY_FILE = customPath;
         const key = loadOrCreateMasterKey(tmpDir);
         expect(key.length).toBe(32);
         expect(fs.existsSync(customPath)).toBe(true);
       } finally {
         if (origEnv !== undefined) {
-          process.env.XIZHAO_MASTER_KEY_FILE = origEnv;
+          process.env.XM_SQL_MCP_MASTER_KEY_FILE = origEnv;
         } else {
-          delete process.env.XIZHAO_MASTER_KEY_FILE;
+          delete process.env.XM_SQL_MCP_MASTER_KEY_FILE;
         }
         fs.rmSync(tmpDir, { recursive: true, force: true });
       }

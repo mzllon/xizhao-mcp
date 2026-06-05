@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 function createTokenFile(): string {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xizhao-auth-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "xm-sql-mcp-auth-"));
   cleanupQueue.push(tmpDir);
   const tokenPath = path.join(tmpDir, "dashboard.token");
   fs.writeFileSync(tokenPath, "test-token-12345");
@@ -112,7 +112,7 @@ describe("auth middleware", () => {
     expect(result).toBeInstanceOf(Response);
     expect(result.status).toBe(302);
     const cookie = result.headers.get("Set-Cookie");
-    expect(cookie).toContain("xizhao_session=");
+    expect(cookie).toContain("xm_sql_mcp_session=");
     expect(cookie).toContain("HttpOnly");
   });
 
@@ -131,7 +131,7 @@ describe("auth middleware", () => {
 
     const redirect = (await middleware(c1, async () => {})) as Response;
     const cookieHeader = redirect.headers.get("Set-Cookie") ?? "";
-    const sessionMatch = cookieHeader.match(/xizhao_session=([^;]+)/);
+    const sessionMatch = cookieHeader.match(/xm_sql_mcp_session=([^;]+)/);
     const sessionId = sessionMatch?.[1];
     expect(sessionId).toBeTruthy();
 
@@ -139,7 +139,7 @@ describe("auth middleware", () => {
     const c2 = {
       req: {
         header: (name: string) =>
-          name === "cookie" ? `xizhao_session=${sessionId}` : undefined,
+          name === "cookie" ? `xm_sql_mcp_session=${sessionId}` : undefined,
         query: () => undefined,
         path: "/api/approvals",
       },

@@ -88,7 +88,7 @@ describe("executeSql hard-blocked statements", () => {
     ).rejects.toThrow("permanently blocked");
   });
 
-  it("throws XizhaoError with POLICY_VIOLATION code", async () => {
+  it("throws XmSqlMcpError with POLICY_VIOLATION code", async () => {
     const conn = mockConn();
     try {
       await executeSql(conn, "CREATE DATABASE evil_db", { maxLimit: 1000 });

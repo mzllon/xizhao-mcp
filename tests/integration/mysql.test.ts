@@ -4,9 +4,9 @@
  * Requires a real MySQL instance. Connection info from environment:
  *   MYSQL_HOST (default: 192.168.10.2)
  *   MYSQL_PORT (default: 3306)
- *   MYSQL_USER (default: xizhao_ai)
- *   MYSQL_PASSWORD (default: Xizhao.123)
- *   MYSQL_DATABASE (default: xizhao)
+ *   MYSQL_USER (default: xm_sql_mcp_ai)
+ *   MYSQL_PASSWORD (default: XM-SQL-MCP.123)
+ *   MYSQL_DATABASE (default: xm_sql_mcp)
  *
  * Run: pnpm test:integration tests/integration/mysql.test.ts
  */
@@ -23,12 +23,12 @@ import {
 
 const MYSQL_HOST = process.env.MYSQL_HOST ?? "192.168.10.2";
 const MYSQL_PORT = Number(process.env.MYSQL_PORT ?? "3306");
-const MYSQL_USER = process.env.MYSQL_USER ?? "xizhao_ai";
-const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD ?? "Xizhao.123";
-const MYSQL_DATABASE = process.env.MYSQL_DATABASE ?? "xizhao";
+const MYSQL_USER = process.env.MYSQL_USER ?? "xm_sql_mcp_ai";
+const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD ?? "XM-SQL-MCP.123";
+const MYSQL_DATABASE = process.env.MYSQL_DATABASE ?? "xm-sql-mcp";
 
 /** Table name prefix to identify our test tables for cleanup */
-const TEST_PREFIX = "xizhao_test_";
+const TEST_PREFIX = "xm_sql_mcp_test_";
 
 function testConn(): Connection {
   return {
@@ -229,7 +229,7 @@ describe("executeSql", () => {
   it("hard-blocks DROP DATABASE", async () => {
     const conn = testConn();
     await expect(
-      executeSql(conn, "DROP DATABASE xizhao", { maxLimit: 10 }),
+      executeSql(conn, "DROP DATABASE xm_sql_mcp", { maxLimit: 10 }),
     ).rejects.toThrow("permanently blocked");
   });
 });

@@ -10,7 +10,7 @@ import type {
   ToolHandlerContext,
 } from "../middleware/audit.js";
 import { explainSql } from "../../core/mysql.js";
-import { XizhaoError } from "../../shared/errors.js";
+import { XmSqlMcpError } from "../../shared/errors.js";
 import { success } from "../response.js";
 
 export function createExplainSqlHandler() {
@@ -22,18 +22,18 @@ export function createExplainSqlHandler() {
     const sql = args.sql as string | undefined;
 
     if (!connectionName) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         "Missing 'connection' argument",
       );
     }
     if (!sql) {
-      throw new XizhaoError("SQL_PARSE_ERROR", "Missing 'sql' argument");
+      throw new XmSqlMcpError("SQL_PARSE_ERROR", "Missing 'sql' argument");
     }
 
     const conn = handlerCtx.conn;
     if (!conn) {
-      throw new XizhaoError(
+      throw new XmSqlMcpError(
         "CONNECTION_NOT_FOUND",
         `Connection "${connectionName}" not found`,
       );

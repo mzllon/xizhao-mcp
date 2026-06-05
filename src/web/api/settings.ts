@@ -7,7 +7,7 @@
  */
 import { Hono } from "hono";
 
-/** Default settings stored in ~/.xizhao/settings.json */
+/** Default settings stored in ~/.xm-sql-mcp/settings.json */
 export interface DashboardSettings {
   defaultPolicyPreset: string;
   approvalTtlHours: number;

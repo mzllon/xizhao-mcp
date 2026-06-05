@@ -12,7 +12,7 @@ export interface StorageHandle {
 }
 
 /**
- * Open (or create) the Xizhao config database.
+ * Open (or create) the XM-SQL-MCP config database.
  *
  * - Creates directory structure if missing
  * - Opens SQLite with WAL mode for concurrent access
